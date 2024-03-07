@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>QRigomatic</class>
+ <widget class="QMainWindow" name="QRigomatic">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>453</width>
+    <height>651</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Rig o'Matic</string>
+  </property>
+  <widget class="QWidget" name="mainWidget">
+   <layout class="QVBoxLayout" name="verticalLayout">
+    <property name="leftMargin">
+     <number>2</number>
+    </property>
+    <property name="topMargin">
+     <number>2</number>
+    </property>
+    <property name="rightMargin">
+     <number>2</number>
+    </property>
+    <property name="bottomMargin">
+     <number>2</number>
+    </property>
+    <item>
+     <widget class="QTabWidget" name="tabControl">
+      <property name="currentIndex">
+       <number>5</number>
+      </property>
+      <widget class="QCreateTab" name="createTab">
+       <attribute name="title">
+        <string>Create</string>
+       </attribute>
+      </widget>
+      <widget class="QRenameTab" name="renameTab">
+       <attribute name="title">
+        <string>Rename</string>
+       </attribute>
+      </widget>
+      <widget class="QShapesTab" name="shapesTab">
+       <attribute name="title">
+        <string>Shapes</string>
+       </attribute>
+      </widget>
+      <widget class="QAttributesTab" name="attributesTab">
+       <attribute name="title">
+        <string>Attributes</string>
+       </attribute>
+      </widget>
+      <widget class="QConstraintsTab" name="constraintsTab">
+       <attribute name="title">
+        <string>Constraints</string>
+       </attribute>
+      </widget>
+      <widget class="QPublishTab" name="publishTab">
+       <attribute name="title">
+        <string>Publish</string>
+       </attribute>
+      </widget>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+ </widget>
+ <customwidgets>
+  <customwidget>
+   <class>QRenameTab</class>
+   <extends>QWidget</extends>
+   <header>rigomatic/ui/tabs/qrenametab.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>QShapesTab</class>
+   <extends>QWidget</extends>
+   <header>rigomatic/ui/tabs/qshapestab.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>QAttributesTab</class>
+   <extends>QWidget</extends>
+   <header>rigomatic/ui/tabs/qattributestab.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>QConstraintsTab</class>
+   <extends>QWidget</extends>
+   <header>rigomatic/ui/tabs/qconstraintstab.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>QCreateTab</class>
+   <extends>QWidget</extends>
+   <header>rigomatic/ui/tabs/qcreatetab.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>QPublishTab</class>
+   <extends>QWidget</extends>
+   <header>rigomatic/ui/tabs/qpublishtab.h</header>
+   <container>1</container>
+  </customwidget>
+ </customwidgets>
+ <resources/>
+ <connections/>
+</ui>
