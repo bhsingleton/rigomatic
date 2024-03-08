@@ -8,7 +8,7 @@ from dcc.python import stringutils
 from dcc.maya.libs import shapeutils, transformutils
 from dcc.maya.decorators.undo import undo
 from . import qabstracttab
-from .. import qcolorbutton
+from ..widgets import qcolorbutton
 
 import logging
 logging.basicConfig()
@@ -98,8 +98,8 @@ class QShapesTab(qabstracttab.QAbstractTab):
 
         self.colorizeGroupBox = None
         self.gradientWidget = None
-        self.startColorPushButton = None
-        self.endColorPushButton = None
+        self.startColorButton = None
+        self.endColorButton = None
         self.gradient = None
         self.swatchesWidget = None
         self.swatchesLayout = None
@@ -139,11 +139,11 @@ class QShapesTab(qabstracttab.QAbstractTab):
 
         # Connect start/end buttons to gradient
         #
-        self.startColorChanged.connect(self.startColorPushButton.setColor)
-        self.startColorPushButton.colorChanged.connect(self.gradient.setStartColor)
+        self.startColorChanged.connect(self.startColorButton.setColor)
+        self.startColorButton.colorChanged.connect(self.gradient.setStartColor)
 
-        self.endColorChanged.connect(self.endColorPushButton.setColor)
-        self.endColorPushButton.colorChanged.connect(self.gradient.setEndColor)
+        self.endColorChanged.connect(self.endColorButton.setColor)
+        self.endColorButton.colorChanged.connect(self.gradient.setEndColor)
 
         # Initialize swatch button group
         #
@@ -309,7 +309,7 @@ class QShapesTab(qabstracttab.QAbstractTab):
         :rtype: QtGui.QColor
         """
 
-        return self.startColorPushButton.color()
+        return self.startColorButton.color()
 
     def setStartColor(self, startColor):
         """
@@ -329,7 +329,7 @@ class QShapesTab(qabstracttab.QAbstractTab):
         :rtype: QtGui.QColor
         """
 
-        return self.endColorPushButton.color()
+        return self.endColorButton.color()
 
     def setEndColor(self, endColor):
         """
@@ -1202,7 +1202,7 @@ class QShapesTab(qabstracttab.QAbstractTab):
             self.resizeShapes(self.selection[0], Dimensions.DEPTH, value)
 
     @QtCore.Slot()
-    def on_startColorPushButton_clicked(self):
+    def on_startColorButton_clicked(self):
         """
         Slot method for the `startColourPushButton` widget's `clicked` signal.
 
@@ -1246,7 +1246,7 @@ class QShapesTab(qabstracttab.QAbstractTab):
             self.setStartColor(color)
 
     @QtCore.Slot()
-    def on_endColorPushButton_clicked(self):
+    def on_endColorButton_clicked(self):
         """
         Slot method for the `endColourPushButton` widget's `clicked` signal.
 
