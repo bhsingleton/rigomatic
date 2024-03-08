@@ -1,11 +1,11 @@
 from maya.api import OpenMaya as om
 from Qt import QtCore, QtWidgets, QtGui
-from rigotron.libs import kinematicutils
-from rigotron.ui.models import qplugitemmodel, qplugitemfiltermodel, qplugstyleditemdelegate
 from dcc.python import stringutils
 from dcc.maya.libs import transformutils
 from dcc.maya.decorators.undo import undo
 from . import qabstracttab
+from ..models import qplugitemmodel, qplugitemfiltermodel, qplugstyleditemdelegate
+from ...libs import kinematicutils
 
 import logging
 logging.basicConfig()
