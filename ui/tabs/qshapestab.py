@@ -5,7 +5,8 @@ from maya.api import OpenMaya as om
 from Qt import QtCore, QtWidgets, QtGui
 from enum import IntEnum
 from dcc.python import stringutils
-from dcc.maya.libs import shapeutils, transformutils
+from dcc.maya.libs import transformutils, shapeutils
+from dcc.maya.json import mshapeparser
 from dcc.maya.decorators.undo import undo
 from . import qabstracttab
 from ..widgets import qcolorbutton
@@ -891,7 +892,7 @@ class QShapesTab(qabstracttab.QAbstractTab):
         if success and not stringutils.isNullOrEmpty(shapeName):
 
             filePath = self.scene.getAbsoluteShapePath(shapeName)
-            shapeutils.createShapeTemplate(node.object(), filePath)
+            mshapeparser.createShapeTemplate(node.object(), filePath)
 
             self.invalidateShapes()
 
