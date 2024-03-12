@@ -1,3 +1,4 @@
+from maya import cmds as mc
 from maya.api import OpenMaya as om
 from mpy import mpyscene
 from Qt import QtCore, QtWidgets, QtGui, QtCompat
@@ -72,6 +73,8 @@ class QRigomatic(quicwindow.QUicWindow):
     # endregion
 
     # region Dunderscores
+    __plugins__ = ('PointHelper', 'TransformConstraint', 'PointOnCurveConstraint')
+
     def __init__(self, *args, **kwargs):
         """
         Private method called after a new instance has been created.
@@ -184,6 +187,10 @@ class QRigomatic(quicwindow.QUicWindow):
         #
         super(QRigomatic, self).showEvent(event)
 
+        # Load required plugins
+        #
+        self.loadPlugins()
+
         # Add callbacks
         #
         hasCallbacks = len(self._callbackIds)
@@ -269,6 +276,68 @@ class QRigomatic(quicwindow.QUicWindow):
         for tab in self.iterTabs():
 
             tab.saveSettings(settings)
+
+    @staticmethod
+    def getPluginExtension():
+        """
+        Returns the plugin file extension based on the user's operating system.
+
+        :rtype: str
+        """
+
+        # Check system type
+        #
+        if mc.about(windows=True) or mc.about(win64=True):
+
+            return 'mll'
+
+        elif mc.about(macOS=True) or mc.about(macOSx86=True):
+
+            return 'bundle'
+
+        elif mc.about(linux=True) or mc.about(linxx64=True):
+
+            return 'so'
+
+        else:
+
+            raise NotImplementedError()
+
+    @classmethod
+    def loadPlugins(cls):
+        """
+        Loads all the required plugins.
+
+        :rtype: None
+        """
+
+        # Iterate through required plugins
+        #
+        log.info('Loading required plugins...')
+        extension = cls.getPluginExtension()
+
+        for plugin in cls.__plugins__:
+
+            # Check if plugin has been loaded
+            #
+            filename = '{plugin}.{extension}'.format(plugin=plugin, extension=extension)
+
+            if mc.pluginInfo(filename, query=True, loaded=True):
+
+                log.info(f'"{filename}" plugin has already been loaded.')
+                continue
+
+            # Shit goes wrong, so try to load them...
+            #
+            try:
+
+                log.info(f'Loading "{filename}" plugin...')
+                mc.loadPlugin(filename)
+
+            except RuntimeError as exception:
+
+                log.error(exception)
+                continue
 
     def currentTab(self):
         """
