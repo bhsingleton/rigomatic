@@ -96,6 +96,10 @@
           <height>24</height>
          </size>
         </property>
+        <property name="styleSheet">
+         <string notr="true">QPushButton:hover:checked { background-color: green; }
+QPushButton:checked { background-color: darkgreen; border: none; }</string>
+        </property>
        </widget>
       </item>
       <item row="1" column="1" colspan="4">
@@ -343,6 +347,10 @@
           <height>24</height>
          </size>
         </property>
+        <property name="styleSheet">
+         <string notr="true">QPushButton:hover:checked { background-color: green; }
+QPushButton:checked { background-color: darkgreen; border: none; }</string>
+        </property>
        </widget>
       </item>
       <item row="0" column="2">
@@ -364,6 +372,10 @@
           <width>16777215</width>
           <height>24</height>
          </size>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">QPushButton:hover:checked { background-color: green; }
+QPushButton:checked { background-color: darkgreen; border: none; }</string>
         </property>
        </widget>
       </item>
@@ -573,6 +585,10 @@
           <height>24</height>
          </size>
         </property>
+        <property name="styleSheet">
+         <string notr="true">QPushButton:hover:checked { background-color: crimson; }
+QPushButton:checked { background-color: firebrick; border: none; }</string>
+        </property>
         <property name="text">
          <string>Mute</string>
         </property>
@@ -713,6 +729,10 @@
           <width>0</width>
           <height>24</height>
          </size>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">QPushButton:hover:checked { background-color: crimson; }
+QPushButton:checked { background-color: firebrick; border: none; }</string>
         </property>
         <property name="text">
          <string>Nothing Selected</string>
