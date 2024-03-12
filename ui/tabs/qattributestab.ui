@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>453</width>
-    <height>769</height>
+    <height>763</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -1253,7 +1253,7 @@
    <item>
     <widget class="QGroupBox" name="numericRangeGroupBox">
      <property name="sizePolicy">
-      <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+      <sizepolicy hsizetype="Expanding" vsizetype="Minimum">
        <horstretch>0</horstretch>
        <verstretch>0</verstretch>
       </sizepolicy>
