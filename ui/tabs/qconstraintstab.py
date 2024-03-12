@@ -410,14 +410,16 @@ class QConstraintsTab(qabstracttab.QAbstractTab):
 
         # Check if current constraint exists
         #
-        if self.currentConstraint is None:
+        self._targets = []
 
-            self.targetItemModel.setRowCount(0)
-            return
+        if self.currentConstraint is not None:
+
+            self._targets.extend(self.currentConstraint.targets())
 
         # Update target item model
         #
-        self.targetItemModel.setRowCount(self.targetCount)
+        self._targetCount = len(self._targets)
+        self.targetItemModel.setRowCount(self._targetCount)
 
         for (i, target) in enumerate(self.targets):
 
@@ -737,14 +739,10 @@ class QConstraintsTab(qabstracttab.QAbstractTab):
         if 0 <= index < numConstraints:
 
             self._currentConstraint = self.constraints[index]
-            self._targets = self._currentConstraint.targets()
-            self._targetCount = len(self._targets)
 
         else:
 
             self._currentConstraint = None
-            self._targets = []
-            self._targetCount = 0
 
         self.invalidateTargets()
 
