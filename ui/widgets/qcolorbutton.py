@@ -13,6 +13,7 @@ class QColorButton(QtWidgets.QPushButton):
 
     # region Signals
     colorChanged = QtCore.Signal(QtGui.QColor)
+    colorDropped = QtCore.Signal(QtGui.QColor)
     doubleClicked = QtCore.Signal()
     # endregion
 
@@ -217,7 +218,10 @@ class QColorButton(QtWidgets.QPushButton):
         if hasColor and acceptsDrops:
 
             event.accept()
-            self.setColor(mimeData.colorData())
+
+            color = mimeData.colorData()
+            self.colorDropped.emit(color)
+            self.setColor(color)
 
         else:
 
