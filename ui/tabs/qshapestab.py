@@ -765,12 +765,13 @@ class QShapesTab(qabstracttab.QAbstractTab):
         #
         sourceMatrix = source.worldMatrix()
         targetMatrix = target.worldMatrix()
+        shapes = source.shapes()
 
         isSurface, isCurve, isLocator = False, False, False
         controlPoints = None
         localMatrix = None
 
-        for shape in source.iterShapes():
+        for shape in shapes:
 
             # Check if position should be preserved
             #
