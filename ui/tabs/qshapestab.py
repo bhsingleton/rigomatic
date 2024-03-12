@@ -1381,6 +1381,17 @@ class QShapesTab(qabstracttab.QAbstractTab):
 
             self.setStartColor(color)
 
+    @QtCore.Slot(QtGui.QColor)
+    def on_startColorButton_colorDropped(self, color):
+        """
+        Slot method for the `startColourPushButton` widget's `colorDropped` signal.
+
+        :type color: QtGui.QColor
+        :rtype: None
+        """
+
+        self._startColor = color
+
     @QtCore.Slot()
     def on_endColorButton_clicked(self):
         """
@@ -1426,6 +1437,17 @@ class QShapesTab(qabstracttab.QAbstractTab):
             # Update end color
             #
             self.setEndColor(color)
+
+    @QtCore.Slot(QtGui.QColor)
+    def on_endColorButton_colorDropped(self, color):
+        """
+        Slot method for the `endColorButton` widget's `colorDropped` signal.
+
+        :type color: QtGui.QColor
+        :rtype: None
+        """
+
+        self._endColor = color
 
     @QtCore.Slot()
     def on_swatchPushButton_clicked(self):
