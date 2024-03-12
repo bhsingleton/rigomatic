@@ -1,3 +1,4 @@
+from maya.api import OpenMaya as om
 from dcc.ui import quicwidget
 from .. import InvalidateReason
 
@@ -30,7 +31,7 @@ class QAbstractTab(quicwidget.QUicWidget):
     @property
     def selection(self):
         """
-        Returns the active selection
+        Getter method that returns the current selection.
 
         :rtype: List[mpynode.MPyNode]
         """
@@ -40,7 +41,7 @@ class QAbstractTab(quicwidget.QUicWidget):
     @property
     def selectionCount(self):
         """
-        Returns the active selection count
+        Getter method that returns the current selection count.
 
         :rtype: int
         """
@@ -50,32 +51,12 @@ class QAbstractTab(quicwidget.QUicWidget):
     @property
     def selectedNode(self):
         """
-        Returns the active selection
+        Getter method that returns the first selected node.
 
-        :rtype: mpynode.MPyNode
+        :rtype: Union[mpynode.MPyNode, None]
         """
 
         return self.window().selectedNode
-    # endregion
-
-    # region Callbacks
-    def selectionChanged(self):
-        """
-        Callback method that notifies the tab of a selection change.
-
-        :rtype: None
-        """
-
-        self.invalidate(reason=InvalidateReason.SELECTION_CHANGED)
-
-    def sceneChanged(self):
-        """
-        Callback method that notifies the tab of a scene change.
-
-        :rtype: None
-        """
-
-        self.invalidate(reason=InvalidateReason.SCENE_CHANGED)
     # endregion
 
     # region Methods

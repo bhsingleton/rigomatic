@@ -417,8 +417,6 @@ class QRenameTab(qabstracttab.QAbstractTab):
             index = self.previewTableModel.index(i, 1)
             self.previewTableModel.setData(index, after, role=QtCore.Qt.DisplayRole)
 
-        self.previewTableView.resizeColumnToContents(0)
-
     def invalidate(self, reason=None):
         """
         Refreshes the user interface.

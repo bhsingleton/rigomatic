@@ -88,11 +88,10 @@ class QRigomatic(quicwindow.QUicWindow):
         # Declare private variables
         #
         self._scene = mpyscene.MPyScene.getInstance(asWeakReference=True)
-        self._sceneChangedId = None
-        self._selectionChangedId = None
         self._selection = []
         self._selectionCount = 0
         self._selectedNode = None
+        self._callbackIds = om.MCallbackIdArray()
 
         # Declare public variables
         #
@@ -101,6 +100,7 @@ class QRigomatic(quicwindow.QUicWindow):
         self.shapesTab = None
         self.attributesTab = None
         self.constraintsTab = None
+        self.publishTab = None
     # endregion
 
     # region Properties
@@ -117,7 +117,7 @@ class QRigomatic(quicwindow.QUicWindow):
     @property
     def selection(self):
         """
-        Returns the active selection
+        Getter method that returns the current selection.
 
         :rtype: List[mpynode.MPyNode]
         """
@@ -127,7 +127,7 @@ class QRigomatic(quicwindow.QUicWindow):
     @property
     def selectionCount(self):
         """
-        Returns the active selection count
+        Getter method that returns the current selection count.
 
         :rtype: int
         """
@@ -137,9 +137,9 @@ class QRigomatic(quicwindow.QUicWindow):
     @property
     def selectedNode(self):
         """
-        Returns the active selection
+        Getter method that returns the first selected node.
 
-        :rtype: mpynode.MPyNode
+        :rtype: Union[mpynode.MPyNode, None]
         """
 
         return self._selectedNode
@@ -154,9 +154,7 @@ class QRigomatic(quicwindow.QUicWindow):
         :rtype: None
         """
 
-        # Notify current tab
-        #
-        self.currentTab().sceneChanged()
+        self.currentTab().invalidate(reason=self.InvalidateReason.SELECTION_CHANGED)
 
     def selectionChanged(self, *args, **kwargs):
         """
@@ -166,16 +164,11 @@ class QRigomatic(quicwindow.QUicWindow):
         :rtype: None
         """
 
-        # Cache active selection
-        #
-        self._selection = self.scene.selection(apiType=om.MFn.kTransform)
+        self._selection = self.scene.selection(apiType=om.MFn.kDependencyNode)
         self._selectionCount = len(self._selection)
+        self._selectedNode = self._selection[0] if (self._selectionCount > 0) else None
 
-        self._selectedNode = self._selection[0] if self._selectionCount > 0 else None
-
-        # Notify current tab
-        #
-        self.currentTab().selectionChanged()
+        self.currentTab().invalidate(reason=self.InvalidateReason.SELECTION_CHANGED)
     # endregion
 
     # region Events
@@ -193,9 +186,21 @@ class QRigomatic(quicwindow.QUicWindow):
 
         # Add callbacks
         #
-        self._sceneChangedId = om.MSceneMessage.addCallback(om.MSceneMessage.kAfterOpen, onSceneChanged)
-        self._selectionChangedId = om.MEventMessage.addEventCallback('SelectionChanged', onSelectionChanged)
+        hasCallbacks = len(self._callbackIds)
 
+        if not hasCallbacks:
+
+            callbackId = om.MSceneMessage.addCallback(om.MSceneMessage.kAfterNew, onSceneChanged)
+            self._callbackIds.append(callbackId)
+
+            callbackId = om.MSceneMessage.addCallback(om.MSceneMessage.kAfterOpen, onSceneChanged)
+            self._callbackIds.append(callbackId)
+
+            callbackId = om.MEventMessage.addEventCallback('SelectionChanged', onSelectionChanged)
+            self._callbackIds.append(callbackId)
+
+        # Update internal selection tracker
+        #
         self.selectionChanged()
 
     def closeEvent(self, event):
@@ -210,10 +215,14 @@ class QRigomatic(quicwindow.QUicWindow):
         #
         super(QRigomatic, self).closeEvent(event)
 
-        # Remove scene callback
+        # Remove callbacks
         #
-        om.MSceneMessage.removeCallback(self._sceneChangedId)
-        om.MEventMessage.removeCallback(self._selectionChangedId)
+        hasCallbacks = len(self._callbackIds)
+
+        if hasCallbacks:
+
+            om.MMessage.removeCallbacks(self._callbackIds)
+            self._callbackIds.clear()
     # endregion
 
     # region Methods

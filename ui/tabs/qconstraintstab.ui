@@ -125,6 +125,9 @@
           <height>24</height>
          </size>
         </property>
+        <property name="whatsThis">
+         <string>pointOnPolyConstraint</string>
+        </property>
         <property name="text">
          <string>Point on Poly</string>
         </property>
@@ -187,7 +190,7 @@
        </widget>
       </item>
       <item row="5" column="1">
-       <widget class="QPushButton" name="pathPushButton">
+       <widget class="QPushButton" name="pointOnCurvePushButton">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
           <horstretch>0</horstretch>
@@ -205,6 +208,9 @@
           <width>16777215</width>
           <height>24</height>
          </size>
+        </property>
+        <property name="whatsThis">
+         <string>pointOnCurveConstraint</string>
         </property>
         <property name="text">
          <string>Point on Curve</string>

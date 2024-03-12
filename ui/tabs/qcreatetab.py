@@ -34,6 +34,9 @@ class QCreateTab(qabstracttab.QAbstractTab):
 
         # Declare private variables
         #
+        self._selection = []
+        self._selectionCount = 0
+        self._selectedNode = None
         self._currentNode = None
         self._currentMatrix = om.MMatrix.kIdentity
 
@@ -162,11 +165,499 @@ class QCreateTab(qabstracttab.QAbstractTab):
         self.attributeTreeView.setModel(self.attributeItemFilterModel)
         self.attributeTreeView.setItemDelegate(self.attributeStyledItemDelegate)
 
-    def selectedPivot(self):
+    def alignFlags(self):
         """
-        Returns the position of the selected pivot.
+        Returns the align flags.
 
-        :rtype: om.MMatrix
+        :rtype: Dict[str, Any]
+        """
+
+        skipTranslate = {f'skipTranslate{axis}': not match for (match, axis) in zip(self.translateXYZWidget.matches(), ('X', 'Y', 'Z'))}
+        skipRotate = {f'skipRotate{axis}': not match for (match, axis) in zip(self.rotateXYZWidget.matches(), ('X', 'Y', 'Z'))}
+        skipScale = {f'skipScale{axis}': not match for (match, axis) in zip(self.scaleXYZWidget.matches(), ('X', 'Y', 'Z'))}
+
+        return {**skipTranslate, **skipRotate, **skipScale}
+
+    def preserveShapes(self):
+        """
+        Returns the `preserveShapes` flag.
+
+        :rtype: bool
+        """
+
+        return self.preserveShapesCheckBox.isChecked()
+
+    def setPreserveShapes(self, preserveShapes):
+        """
+        Updates the `preserveShapes` flag.
+
+        :type preserveShapes: bool
+        :rtype: None
+        """
+
+        self.preserveShapesCheckBox.setChecked(preserveShapes)
+
+    @undo(name='Rename Node')
+    def renameNode(self, node, name):
+        """
+        Renames the supplied node to the specified name.
+
+        :type node: mpynode.MPyNode
+        :type name: str
+        :rtype: None
+        """
+
+        node.setName(name)
+
+    @undo(name='Recolor Node')
+    def recolorNodes(self, *nodes, wireColor=(0.0, 0.0, 0.0)):
+        """
+        Recolors the supplied node to the specified color.
+
+        :type nodes: Union[mpynode.MPyNode, List[mpynode.MPyNode]]
+        :type wireColor: Tuple[float, float, float]
+        :rtype: None
+        """
+
+        # Iterate through nodes
+        #
+        for node in nodes:
+
+            # Check if this is a transform node
+            #
+            if not node.hasFn(om.MFn.kTransform):
+
+                continue
+
+            # Iterate through shapes
+            #
+            for shape in node.iterShapes():
+
+                shape.useObjectColor = 2
+                shape.wireColorRGB = wireColor
+
+    @undo(name='Create Node')
+    def createNode(self, typeName, name='', matrix=om.MMatrix.kIdentity, locator=False, helper=False):
+        """
+        Returns a new node derived from the specified type.
+
+        :type typeName: str
+        :type name: str
+        :type matrix: om.MMatrix
+        :type locator: bool
+        :type helper: bool
+        :rtype: mpynode.MPyNode
+        """
+
+        # Create node
+        #
+        cleanName = stringutils.slugify(name)
+        name = cleanName if self.scene.isNameUnique(cleanName) and not stringutils.isNullOrEmpty(name) else f'{typeName}1'
+
+        node = self.scene.createNode(typeName, name=name)
+        node.setMatrix(matrix)
+        node.select(replace=True)
+
+        # Add any requested shapes
+        #
+        if locator:
+
+            node.addLocator()
+
+        elif helper:
+
+            node.addPointHelper()
+
+        else:
+
+            pass
+
+        return node
+
+    @undo(name='Add IK-Solver')
+    def addIKSolver(self, startJoint, endJoint):
+        """
+        Adds an IK solver to the supplied start and end joints.
+
+        :type startJoint: mpynode.MPyNode
+        :type endJoint: mpynode.MPyNode
+        :rtype: None
+        """
+
+        # Evaluate supplied nodes
+        #
+        if not (startJoint.hasFn(om.MFn.kJoint) and endJoint.hasFn(om.MFn.kJoint)):
+
+            return
+
+        # Evaluate hierarchy
+        #
+        ancestors = endJoint.ancestors(apiType=om.MFn.kJoint)
+
+        if startJoint not in ancestors:
+
+            log.warning(f'Cannot trace hierarchy between {startJoint} and {endJoint}')
+            return
+
+        # Evaluate which solver to apply
+        #
+        index = ancestors.index(startJoint)
+
+        joints = ancestors[index:] + [endJoint]
+        numJoints = len(joints)
+
+        if numJoints == 2:
+
+            kinematicutils.applySingleChainSolver(startJoint, endJoint)
+
+        elif numJoints == 3:
+
+            kinematicutils.applyRotationPlaneSolver(startJoint, endJoint)
+
+        else:
+
+            kinematicutils.applySpringSolver(startJoint, endJoint)
+
+    @undo(name='Create Intermediate')
+    def createIntermediate(self, *nodes):
+        """
+        Returns an intermediate parent to the supplied node.
+
+        :type nodes: Union[mpynode.MPyNode, List[mpynode.MPyNode]]
+        :rtype: mpynode.MPyNode
+        """
+
+        # Iterate through nodes
+        #
+        intermediates = []
+
+        for node in nodes:
+
+            # Check if this is a transform node
+            #
+            if not node.hasFn(om.MFn.kTransform):
+
+                continue
+
+            # Create parent node
+            #
+            ancestor = node.parent()
+            typeName = node.typeName
+
+            parent = self.scene.createNode(typeName, name='group1', parent=ancestor)
+            parent.copyTransform(node)
+
+            # Re-parent node
+            #
+            node.setParent(parent)
+            node.resetMatrix()
+
+            intermediates.append(parent)
+
+        return intermediates
+
+    @undo(name='Freeze Transform')
+    def freezeTransforms(self, *nodes, includeTranslate=True, includeRotate=True, includeScale=False):
+        """
+        Freezes the transform on the supplied node.
+
+        :type nodes: Union[mpynode.MPyNode, List[mpynode.MPyNode]]
+        :type includeTranslate: bool
+        :type includeRotate: bool
+        :type includeScale: bool
+        :rtype: None
+        """
+
+        # Iterate through nodes
+        #
+        for node in nodes:
+
+            # Check if this is a transform node
+            #
+            if not node.hasFn(om.MFn.kTransform):
+
+                continue
+
+            # Freeze transform
+            #
+            node.freezeTransform(includeTranslate=includeTranslate, includeRotate=includeRotate, includeScale=includeScale)
+
+    @undo(name='Melt Transform')
+    def meltTransforms(self, *nodes):
+        """
+        Melts the transform on the supplied node.
+
+        :type nodes: Union[mpynode.MPyNode, List[mpynode.MPyNode]]
+        :rtype: None
+        """
+
+        # Iterate through nodes
+        #
+        for node in nodes:
+
+            # Check if this is a transform node
+            #
+            if not node.hasFn(om.MFn.kTransform):
+
+                continue
+
+            # Unfreeze transform
+            #
+            node.unfreezeTransform()
+
+    @undo(name='Reset Pivots')
+    def resetPivots(self, *nodes):
+        """
+        Resets the pivots on the supplied nodes.
+
+        :type nodes: Union[mpynode.MPyNode, List[mpynode.MPyNode]]
+        :rtype: None
+        """
+
+        # Iterate through nodes
+        #
+        for node in nodes:
+
+            # Check if this is a transform node
+            #
+            if not node.hasFn(om.MFn.kTransform):
+
+                continue
+
+            # Reset pivots
+            #
+            node.resetPivots()
+
+    @undo(name='Reset Pre-Rotations')
+    def resetPreRotations(self, *nodes):
+        """
+        Resets any pre-rotations on the supplied nodes.
+
+        :type nodes: Union[mpynode.MPyNode, List[mpynode.MPyNode]]
+        :rtype: None
+        """
+
+        # Iterate through nodes
+        #
+        for node in nodes:
+
+            # Check if this is a transform node
+            #
+            if not node.hasFn(om.MFn.kTransform):
+
+                continue
+
+            # Reset pre-rotations
+            #
+            matrix = node.matrix()
+
+            node.resetPreEulerRotation()
+            node.setMatrix(matrix, skipTranslate=True, skipScale=True)
+
+    @undo(name='Zero Transforms')
+    def zeroTransforms(self, *nodes):
+        """
+        Resets the transform matrix on the supplied nodes.
+
+        :type nodes: Union[mpynode.MPyNode, List[mpynode.MPyNode]]
+        :rtype: None
+        """
+
+        # Iterate through nodes
+        #
+        for node in nodes:
+
+            # Check if this is a transform node
+            #
+            if not node.hasFn(om.MFn.kTransform):
+
+                continue
+
+            # Reset transform matrix
+            #
+            node.resetMatrix()
+
+    @undo(name='Sanitize Transforms')
+    def sanitizeTransforms(self, *nodes):
+        """
+        Cleans the transform matrix on the supplied nodes.
+
+        :type nodes: Union[mpynode.MPyNode, List[mpynode.MPyNode]]
+        :rtype: None
+        """
+
+        # Iterate through nodes
+        #
+        for node in nodes:
+
+            # Check if this is a transform node
+            #
+            if not node.hasFn(om.MFn.kTransform):
+
+                continue
+
+            # Reset transform matrix
+            #
+            matrix = node.getAttr('dagLocalMatrix')
+
+            node.unlockAttr('translate', 'rotate', 'scale')
+            node.unfreezeTransform()
+            node.resetPivots()
+            node.resetMatrix()
+
+            # Push change to any shapes
+            #
+            intermediates = node.intermediateObjects()
+            isDeformed = len(intermediates) > 0
+
+            if isDeformed:
+
+                for intermediate in intermediates:
+
+                    controlPoints = [om.MPoint(controlPoint) * matrix for controlPoint in intermediate.controlPoints()]
+                    intermediate.setControlPoints(controlPoints)
+
+            else:
+
+                for shape in node.iterShapes():
+
+                    controlPoints = [om.MPoint(controlPoint) * matrix for controlPoint in shape.controlPoints()]
+                    shape.setControlPoints(controlPoints)
+
+            # Re-lock attributes if deformed
+            #
+            if isDeformed:
+
+                node.lockAttr('translate', 'rotate', 'scale')
+
+    @undo(name='Align Nodes')
+    def alignNodes(self, copyFrom, copyTo, **kwargs):
+        """
+        Aligns the second node to the first node.
+
+        :type copyFrom: mpynode.MPyNode
+        :type copyTo: mpynode.MPyNode
+        :rtype: None
+        """
+
+        # Evaluate supplied nodes
+        #
+        if not (copyFrom.hasFn(om.MFn.kTransform) and copyTo.hasFn(om.MFn.kTransform)):
+
+            return
+
+        # Cache initial matrix for later use
+        #
+        preserveShapes = kwargs.get('preserveShapes', False)
+        initialMatrix = copyTo.matrix()
+
+        # Copy transform
+        #
+        copyTo.copyTransform(copyFrom, **kwargs)
+
+        # Check if shapes should be preserved
+        #
+        if preserveShapes:
+
+            matrix = copyTo.matrix()
+
+            for shape in copyTo.iterShapes():
+
+                isSurface = shape.hasFn(om.MFn.kSurface)
+                isCurve = shape.hasFn(om.MFn.kCurve)
+                isLocator = shape.hasFn(om.MFn.kLocator)
+
+                if isSurface or isCurve:
+
+                    controlPoints = [om.MPoint(point) * initialMatrix * matrix.inverse() for point in shape.controlPoints()]
+                    shape.setControlPoints(controlPoints)
+
+                elif isLocator:
+
+                    localMatrix = shape.localMatrix() * initialMatrix * matrix.inverse()
+                    shape.setLocalMatrix(localMatrix)
+
+                else:
+
+                    log.warning(f'No support for {shape.apiTypeStr} shapes!')
+                    continue
+
+    def invalidateName(self):
+        """
+        Refreshes the name line-edit.
+
+        :rtype: None
+        """
+
+        # Evaluate active selection
+        #
+        if self.selectedNode is not None:
+
+            self.namespaceComboBox.blockSignals(True)
+            self.namespaceComboBox.setCurrentIndex(self.namespaceComboBox.findText(self.selectedNode.namespace()))
+            self.namespaceComboBox.blockSignals(False)
+
+            self.nameLineEdit.blockSignals(True)
+            self.nameLineEdit.setText(self.selectedNode.name())
+            self.nameLineEdit.blockSignals(False)
+
+        else:
+
+            self.nameLineEdit.blockSignals(True)
+            self.nameLineEdit.setText('')
+            self.nameLineEdit.blockSignals(False)
+
+    def invalidateNamespaces(self):
+        """
+        Refreshes the namespace combo-box.
+
+        :rtype: None
+        """
+
+        namespaces = om.MNamespace.getNamespaces(parentNamespace=':', recurse=True)
+        namespaces.insert(0, '')
+
+        self.namespaceComboBox.blockSignals(True)
+        self.namespaceComboBox.clear()
+        self.namespaceComboBox.addItems(namespaces)
+        self.namespaceComboBox.blockSignals(False)
+
+    def invalidateWireColor(self):
+        """
+        Refreshes the wire-color button.
+
+        :rtype: None
+        """
+
+        # Evaluate current selection
+        #
+        if self.selectedNode is None:
+
+            return
+
+        # Evaluate first selected node
+        #
+        isTransform = self.selectedNode.hasFn(om.MFn.kTransform)
+
+        if not isTransform:
+
+            return
+
+        # Check if transform has any shapes
+        #
+        shape = self.selectedNode.shape()
+
+        if shape is not None:
+
+            self.wireColorButton.blockSignals(True)
+            self.wireColorButton.setColor(QtGui.QColor.fromRgbF(*shape.wireColorRGB))
+            self.wireColorButton.blockSignals(False)
+
+    def invalidatePivot(self):
+        """
+        Refreshes the internal pivot position.
+
+        :rtype: None
         """
 
         # Evaluate active selection
@@ -176,7 +667,8 @@ class QCreateTab(qabstracttab.QAbstractTab):
 
         if not hasSelection:
 
-            return om.MMatrix.kIdentity
+            self._currentMatrix = om.MMatrix.kIdentity
+            return
 
         # Calculate active pivot
         #
@@ -233,377 +725,7 @@ class QCreateTab(qabstracttab.QAbstractTab):
         scaleMatrix = transformutils.createScaleMatrix(worldMatrix)
         matrix = scaleMatrix * rotateMatrix * translateMatrix
 
-        return matrix
-
-    def alignFlags(self):
-        """
-        Returns the align flags.
-
-        :rtype: Dict[str, Any]
-        """
-
-        skipTranslate = {f'skipTranslate{axis}': not match for (match, axis) in zip(self.translateXYZWidget.matches(), ('X', 'Y', 'Z'))}
-        skipRotate = {f'skipRotate{axis}': not match for (match, axis) in zip(self.rotateXYZWidget.matches(), ('X', 'Y', 'Z'))}
-        skipScale = {f'skipScale{axis}': not match for (match, axis) in zip(self.scaleXYZWidget.matches(), ('X', 'Y', 'Z'))}
-
-        return {**skipTranslate, **skipRotate, **skipScale}
-
-    def preserveShapes(self):
-        """
-        Returns the `preserveShapes` flag.
-
-        :rtype: bool
-        """
-
-        return self.preserveShapesCheckBox.isChecked()
-
-    def setPreserveShapes(self, preserveShapes):
-        """
-        Updates the `preserveShapes` flag.
-
-        :type preserveShapes: bool
-        :rtype: None
-        """
-
-        self.preserveShapesCheckBox.setChecked(preserveShapes)
-
-    @undo(name='Rename Node')
-    def renameNode(self, node, name):
-        """
-        Renames the supplied node to the specified name.
-
-        :type node: mpynode.MPyNode
-        :type name: str
-        :rtype: None
-        """
-
-        node.setName(name)
-
-    @undo(name='Recolor Node')
-    def recolorNodes(self, *nodes, wireColor):
-        """
-        Recolors the supplied node to the specified color.
-
-        :type nodes: Union[mpynode.MPyNode, List[mpynode.MPyNode]]
-        :type wireColor: Tuple[float, float, float]
-        :rtype: None
-        """
-
-        for node in nodes:
-
-            for shape in node.iterShapes():
-
-                shape.useObjectColor = 2
-                shape.wireColorRGB = wireColor
-
-    @undo(name='Create Node')
-    def createNode(self, typeName, name='', matrix=om.MMatrix.kIdentity, locator=False, helper=False):
-        """
-        Returns a new node derived from the specified type.
-
-        :type typeName: str
-        :type name: str
-        :type matrix: om.MMatrix
-        :type locator: bool
-        :type helper: bool
-        :rtype: mpynode.MPyNode
-        """
-
-        # Create node
-        #
-        cleanName = stringutils.slugify(name)
-        name = cleanName if self.scene.isNameUnique(cleanName) and not stringutils.isNullOrEmpty(name) else f'{typeName}1'
-
-        node = self.scene.createNode(typeName, name=name)
-        node.setMatrix(matrix)
-        node.select(replace=True)
-
-        # Add any requested shapes
-        #
-        if locator:
-
-            node.addLocator()
-
-        elif helper:
-
-            node.addPointHelper()
-
-        else:
-
-            pass
-
-        return node
-
-    @undo(name='Add IK-Solver')
-    def addIKSolver(self, startJoint, endJoint):
-        """
-        Adds an IK solver to the supplied start and end joints.
-
-        :type startJoint: mpynode.MPyNode
-        :type endJoint: mpynode.MPyNode
-        :rtype: None
-        """
-
-        # Evaluate hierarchy
-        #
-        ancestors = endJoint.ancestors(apiType=om.MFn.kJoint)
-
-        if startJoint not in ancestors:
-
-            log.warning(f'Cannot trace hierarchy between {startJoint} and {endJoint}')
-            return
-
-        # Evaluate which solver to apply
-        #
-        index = ancestors.index(startJoint)
-
-        joints = ancestors[index:] + [endJoint]
-        numJoints = len(joints)
-
-        if numJoints == 2:
-
-            kinematicutils.applySingleChainSolver(startJoint, endJoint)
-
-        elif numJoints == 3:
-
-            kinematicutils.applyRotationPlaneSolver(startJoint, endJoint)
-
-        else:
-
-            kinematicutils.applySpringSolver(startJoint, endJoint)
-
-    @undo(name='Create Intermediate')
-    def createIntermediate(self, node):
-        """
-        Returns an intermediate parent to the supplied node.
-
-        :type node: mpynode.MPyNode
-        :rtype: mpynode.MPyNode
-        """
-
-        # Create parent node
-        #
-        name = f'{node.name()}_GRP'
-        ancestor = node.parent()
-
-        parent = self.scene.createNode('transform', name=name, parent=ancestor)
-        parent.copyTransform(node)
-
-        # Re-parent node
-        #
-        node.setParent(parent)
-        node.resetMatrix()
-
-        return parent
-
-    @undo(name='Freeze Transform')
-    def freezeTransforms(self, *nodes, includeTranslate=True, includeRotate=True, includeScale=False):
-        """
-        Freezes the transform on the supplied node.
-
-        :type nodes: Union[mpynode.MPyNode, List[mpynode.MPyNode]]
-        :type includeTranslate: bool
-        :type includeRotate: bool
-        :type includeScale: bool
-        :rtype: None
-        """
-
-        for node in nodes:
-
-            node.freezeTransform(includeTranslate=includeTranslate, includeRotate=includeRotate, includeScale=includeScale)
-
-    @undo(name='Melt Transform')
-    def meltTransforms(self, *nodes):
-        """
-        Melts the transform on the supplied node.
-
-        :type nodes: Union[mpynode.MPyNode, List[mpynode.MPyNode]]
-        :rtype: None
-        """
-
-        for node in nodes:
-
-            node.unfreezeTransform()
-
-    @undo(name='Reset Pivots')
-    def resetPivots(self, *nodes):
-        """
-        Resets the pivots on the supplied nodes.
-
-        :type nodes: Union[mpynode.MPyNode, List[mpynode.MPyNode]]
-        :rtype: None
-        """
-
-        for node in nodes:
-
-            node.resetPivots()
-
-    @undo(name='Reset Pre-Rotations')
-    def resetPreRotations(self, *nodes):
-        """
-        Resets any pre-rotations on the supplied nodes.
-
-        :type nodes: Union[mpynode.MPyNode, List[mpynode.MPyNode]]
-        :rtype: None
-        """
-
-        for node in nodes:
-
-            matrix = node.matrix()
-
-            node.resetPreEulerRotation()
-            node.setMatrix(matrix, skipTranslate=True, skipScale=True)
-
-    @undo(name='Zero Transforms')
-    def zeroTransforms(self, *nodes):
-        """
-        Resets the transform matrix on the supplied nodes.
-
-        :type nodes: Union[mpynode.MPyNode, List[mpynode.MPyNode]]
-        :rtype: None
-        """
-
-        for node in nodes:
-
-            node.resetMatrix()
-
-    @undo(name='Sanitize Transforms')
-    def sanitizeTransforms(self, *nodes):
-        """
-        Cleans the transform matrix on the supplied nodes.
-
-        :type nodes: Union[mpynode.MPyNode, List[mpynode.MPyNode]]
-        :rtype: None
-        """
-
-        for node in nodes:
-
-            matrix = node.getAttr('dagLocalMatrix')
-
-            node.unlockAttr('translate', 'rotate', 'scale')
-            node.unfreezeTransform()
-            node.resetPivots()
-            node.resetMatrix()
-
-            intermediates = node.intermediateObjects()
-
-            for intermediate in intermediates:
-
-                controlPoints = [om.MPoint(controlPoint) * matrix for controlPoint in intermediate.controlPoints()]
-                intermediate.setControlPoints(controlPoints)
-
-            node.lockAttr('translate', 'rotate', 'scale')
-
-    @undo(name='Align Nodes')
-    def alignNodes(self, copyFrom, copyTo, **kwargs):
-        """
-        Aligns the second node to the first node.
-
-        :type copyFrom: mpynode.MPyNode
-        :type copyTo: mpynode.MPyNode
-        :rtype: None
-        """
-
-        # Cache initial matrix for later use
-        #
-        preserveShapes = kwargs.get('preserveShapes', False)
-        initialMatrix = copyTo.matrix()
-
-        # Copy transform
-        #
-        copyTo.copyTransform(copyFrom, **kwargs)
-
-        # Check if shapes should be preserved
-        #
-        if preserveShapes:
-
-            matrix = copyTo.matrix()
-
-            for shape in copyTo.iterShapes():
-
-                isSurface = shape.hasFn(om.MFn.kSurface)
-                isCurve = shape.hasFn(om.MFn.kCurve)
-                isLocator = shape.hasFn(om.MFn.kLocator)
-
-                if isSurface or isCurve:
-
-                    controlPoints = [om.MPoint(point) * initialMatrix * matrix.inverse() for point in shape.controlPoints()]
-                    shape.setControlPoints(controlPoints)
-
-                elif isLocator:
-
-                    localMatrix = shape.localMatrix() * initialMatrix * matrix.inverse()
-                    shape.setLocalMatrix(localMatrix)
-
-                else:
-
-                    log.warning(f'No support for {shape.apiTypeStr} shapes!')
-                    continue
-
-    def invalidateName(self):
-        """
-        Refreshes the name line-edit.
-
-        :rtype: None
-        """
-
-        if self.selectedNode is not None:
-
-            self.namespaceComboBox.blockSignals(True)
-            self.namespaceComboBox.setCurrentIndex(self.namespaceComboBox.findText(self.selectedNode.namespace()))
-            self.namespaceComboBox.blockSignals(False)
-
-            self.nameLineEdit.blockSignals(True)
-            self.nameLineEdit.setText(self.selectedNode.name())
-            self.nameLineEdit.blockSignals(False)
-
-        else:
-
-            self.nameLineEdit.setText('')
-
-    def invalidateNamespaces(self):
-        """
-        Refreshes the namespace combo-box.
-
-        :rtype: None
-        """
-
-        namespaces = om.MNamespace.getNamespaces(parentNamespace=':', recurse=True)
-        namespaces.insert(0, '')
-
-        self.namespaceComboBox.blockSignals(True)
-        self.namespaceComboBox.clear()
-        self.namespaceComboBox.addItems(namespaces)
-        self.namespaceComboBox.blockSignals(False)
-
-    def invalidateWireColor(self):
-        """
-        Refreshes the wire-color button.
-
-        :rtype: None
-        """
-
-        if self.selectedNode is None:
-
-            return
-
-        shapes = self.selectedNode.shapes()
-        numShapes = len(shapes)
-
-        if numShapes > 0:
-
-            self.wireColorButton.blockSignals(True)
-            self.wireColorButton.setColor(QtGui.QColor.fromRgbF(*shapes[0].wireColorRGB))
-            self.wireColorButton.blockSignals(False)
-
-    def invalidatePivot(self):
-        """
-        Refreshes the internal pivot position.
-
-        :rtype: None
-        """
-
-        self._currentMatrix = self.selectedPivot()
+        self._currentMatrix = matrix
 
     def invalidateEditor(self):
         """
@@ -620,9 +742,11 @@ class QCreateTab(qabstracttab.QAbstractTab):
 
         # Evaluate active selection
         #
-        if self.selectedNode is not None:
+        selectedNode = self.selection[0] if (len(self.selection) > 0) else None
 
-            self.editPushButton.setText(f'Edit {self.selectedNode.name()}')
+        if selectedNode is not None:
+
+            self.editPushButton.setText(f'Edit {selectedNode.name()}')
 
         else:
 
@@ -639,7 +763,7 @@ class QCreateTab(qabstracttab.QAbstractTab):
         #
         if self.currentNode is not None:
 
-            self.attributeItemModel.invisibleRootItem = self.selectedNode.handle()
+            self.attributeItemModel.invisibleRootItem = self.currentNode.handle()
 
         else:
 
@@ -666,11 +790,22 @@ class QCreateTab(qabstracttab.QAbstractTab):
         if reason == self.InvalidateReason.SCENE_CHANGED:
 
             self.invalidateNamespaces()
+            self.invalidate(reason=self.InvalidateReason.SELECTION_CHANGED)
 
-        self.invalidateName()
-        self.invalidateWireColor()
-        self.invalidatePivot()
-        self.invalidateEditor()
+        elif reason == self.InvalidateReason.TAB_CHANGED:
+
+            self.invalidate(reason=self.InvalidateReason.SELECTION_CHANGED)
+
+        elif reason == self.InvalidateReason.SELECTION_CHANGED:
+
+            self.invalidateName()
+            self.invalidateWireColor()
+            self.invalidatePivot()
+            self.invalidateEditor()
+
+        else:
+
+            pass
     # endregion
 
     # region Slots
@@ -738,7 +873,7 @@ class QCreateTab(qabstracttab.QAbstractTab):
 
         if self.selectionCount > 0:
 
-            self.recolorNodes(*self.selection, (color.redF(), color.greenF(), color.blueF()))
+            self.recolorNodes(*self.selection, wireColor=(color.redF(), color.greenF(), color.blueF()))
 
     @QtCore.Slot()
     def on_transformPushButton_clicked(self):
@@ -807,13 +942,13 @@ class QCreateTab(qabstracttab.QAbstractTab):
         :rtype: None
         """
 
-        if self.selectedNode is not None:
+        if self.selectionCount > 0:
 
-            self.createIntermediate(self.selectedNode)
+            self.createIntermediate(*self.selection)
 
         else:
 
-            log.warning(f'Creating an intermediate expects 1 selected node ({self.selectionCount} selected)!')
+            log.warning(f'Creating an intermediate expects at least 1 selected node ({self.selectionCount} selected)!')
 
     @QtCore.Slot()
     def on_freezePushButton_clicked(self):
@@ -829,7 +964,12 @@ class QCreateTab(qabstracttab.QAbstractTab):
 
         if self.selectionCount > 0:
 
-            self.freezeTransforms(*self.selection, includeTranslate=includeTranslate, includeRotate=includeRotate, includeScale=includeScale)
+            self.freezeTransforms(
+                *self.selection,
+                includeTranslate=includeTranslate,
+                includeRotate=includeRotate,
+                includeScale=includeScale
+            )
 
     @QtCore.Slot()
     def on_meltPushButton_clicked(self):

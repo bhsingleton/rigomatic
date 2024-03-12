@@ -344,7 +344,7 @@ class QShapesTab(qabstracttab.QAbstractTab):
         self.endColorChanged.emit(self._endColor)
 
     @undo(name='Add Custom Shape')
-    def addShape(self, filename, *nodes):
+    def addCustomShape(self, filename, *nodes):
         """
         Adds the specified custom shape to the supplied nodes.
 
@@ -353,8 +353,18 @@ class QShapesTab(qabstracttab.QAbstractTab):
         :rtype: None
         """
 
+        # Iterate through nodes
+        #
         for node in nodes:
 
+            # Check if this is a transform node
+            #
+            if not node.hasFn(om.MFn.kTransform):
+
+                continue
+
+            # Add custom shape to transform
+            #
             node.addShape(filename)
 
     @undo(name='Add Star')
@@ -367,8 +377,18 @@ class QShapesTab(qabstracttab.QAbstractTab):
         :rtype: None
         """
 
+        # Iterate through nodes
+        #
         for node in nodes:
 
+            # Check if this is a transform node
+            #
+            if not node.hasFn(om.MFn.kTransform):
+
+                continue
+
+            # Add star to transform
+            #
             node.addStar(numPoints=numPoints)
 
     @undo(name='Add Locator')
@@ -380,8 +400,18 @@ class QShapesTab(qabstracttab.QAbstractTab):
         :rtype: None
         """
 
+        # Iterate through nodes
+        #
         for node in nodes:
 
+            # Check if this is a transform node
+            #
+            if not node.hasFn(om.MFn.kTransform):
+
+                continue
+
+            # Add locator to transform
+            #
             node.addLocator()
 
     @undo(name='Add Point Helper')
@@ -393,8 +423,18 @@ class QShapesTab(qabstracttab.QAbstractTab):
         :rtype: None
         """
 
+        # Iterate through nodes
+        #
         for node in nodes:
 
+            # Check if this is a transform node
+            #
+            if not node.hasFn(om.MFn.kTransform):
+
+                continue
+
+            # Add point helper to transform
+            #
             node.addPointHelper()
 
     @undo(name='Convert Edge to Curve')
@@ -411,8 +451,8 @@ class QShapesTab(qabstracttab.QAbstractTab):
 
         # Convert edge component and sort elements
         #
-        vertexComponent = edgeComponent.convert(om.MFn.kMeshVertComponent)
-        success = vertexComponent.retraceElements()
+        vertexIndices = edgeComponent.associatedVertices(ordered=True)
+        success = len(vertexIndices) > 0
 
         if not success:
 
@@ -421,7 +461,6 @@ class QShapesTab(qabstracttab.QAbstractTab):
 
         # Collect vertex points
         #
-        vertexIndices = vertexComponent.elements()
         parentMatrix = mesh.parentMatrix()
 
         points = [(mesh.getPoint(vertexIndex) + (mesh.getVertexNormal(vertexIndex, True) * offset)) * parentMatrix for vertexIndex in vertexIndices]
@@ -457,8 +496,8 @@ class QShapesTab(qabstracttab.QAbstractTab):
 
         # Convert edge component and sort elements
         #
-        vertexComponent = edgeComponent.convert(om.MFn.kMeshVertComponent)
-        success = vertexComponent.retraceElements()
+        vertexIndices = edgeComponent.associatedVertices(ordered=True)
+        success = len(vertexIndices) > 0
 
         if not success:
 
@@ -467,7 +506,6 @@ class QShapesTab(qabstracttab.QAbstractTab):
 
         # Collect vertex points
         #
-        vertexIndices = vertexComponent.elements()
         parentMatrix = mesh.parentMatrix()
 
         points = [(mesh.getPoint(vertexIndex) + (mesh.getVertexNormal(vertexIndex, True) * offset)) * parentMatrix for vertexIndex in vertexIndices]
@@ -492,8 +530,18 @@ class QShapesTab(qabstracttab.QAbstractTab):
         :rtype: None
         """
 
+        # Iterate through nodes
+        #
         for node in nodes:
 
+            # Check if this is a transform node
+            #
+            if not node.hasFn(om.MFn.kTransform):
+
+                continue
+
+            # Evaluate number of shapes
+            #
             nodeName = node.name()
 
             shapes = node.shapes()
@@ -531,8 +579,18 @@ class QShapesTab(qabstracttab.QAbstractTab):
         :rtype: None
         """
 
+        # Iterate through nodes
+        #
         for node in nodes:
 
+            # Check if this is a transform node
+            #
+            if not node.hasFn(om.MFn.kTransform):
+
+                continue
+
+            # Remove shapes from transform
+            #
             log.info(f'Removing shapes from: {node}')
             node.removeShapes()
 
@@ -547,17 +605,28 @@ class QShapesTab(qabstracttab.QAbstractTab):
         :rtype: None
         """
 
+        # Iterate through nodes
+        #
         numNodes = len(nodes)
         factor = 1.0 / (numNodes - 1)
 
         for (i, node) in enumerate(nodes):
 
-            for shape in node.iterShapes():
+            # Check if this is a transform node
+            #
+            if not node.hasFn(om.MFn.kTransform):
 
-                weight = float(i) * factor
-                red = (startColor.redF() * (1.0 - weight)) + (endColor.redF() * weight)
-                green = (startColor.greenF() * (1.0 - weight)) + (endColor.greenF() * weight)
-                blue = (startColor.blueF() * (1.0 - weight)) + (endColor.blueF() * weight)
+                continue
+
+            # Iterate through shapes
+            #
+            weight = float(i) * factor
+
+            red = (startColor.redF() * (1.0 - weight)) + (endColor.redF() * weight)
+            green = (startColor.greenF() * (1.0 - weight)) + (endColor.greenF() * weight)
+            blue = (startColor.blueF() * (1.0 - weight)) + (endColor.blueF() * weight)
+
+            for shape in node.iterShapes():
 
                 shape.useObjectColor = 2
                 shape.wireColorRGB = (red, green, blue)
@@ -572,10 +641,15 @@ class QShapesTab(qabstracttab.QAbstractTab):
         :rtype: None
         """
 
-        # Iterate through shapes
+        # Check if this is a transform node
+        #
+        if not node.hasFn(om.MFn.kTransform):
+
+            return
+
+        # Compose scale matrix
         #
         boundingBox = node.shapeBox()
-
         scaleX = (dimensions.width / boundingBox.width) if (boundingBox.width != 0.0) else 1e-3
         scaleY = (dimensions.height / boundingBox.height) if (boundingBox.height != 0.0) else 1e-3
         scaleZ = (dimensions.depth / boundingBox.depth) if (boundingBox.depth != 0.0) else 1e-3
@@ -583,8 +657,11 @@ class QShapesTab(qabstracttab.QAbstractTab):
 
         scaleMatrix = transformutils.createScaleMatrix(scale)
         pivotMatrix = transformutils.createTranslateMatrix(boundingBox.center)
+
         matrix = scaleMatrix * pivotMatrix
 
+        # Iterate through shapes
+        #
         isSurface, isCurve, isLocator = False, False, False
         controlPoints = None
         localMatrix = None
@@ -621,20 +698,27 @@ class QShapesTab(qabstracttab.QAbstractTab):
         :rtype: None
         """
 
-        # Get current dimension
+        # Check if this is a transform node
+        #
+        if not node.hasFn(om.MFn.kTransform):
+
+            return
+
+        # Compose scale matrix
         #
         boundingBox = node.shapeBox()
         currentValue = getattr(boundingBox, dimension.name.lower())
 
-        # Iterate through shapes
-        #
         scale = om.MVector(1.0, 1.0, 1.0)
         scale[dimension] = (value / currentValue) if currentValue > 0.0 else 1e-3
 
         scaleMatrix = transformutils.createScaleMatrix(scale)
         pivotMatrix = transformutils.createTranslateMatrix(boundingBox.center)
+
         matrix = scaleMatrix * pivotMatrix
 
+        # Iterate through shapes
+        #
         isSurface, isCurve, isLocator = False, False, False
         controlPoints = None
         localMatrix = None
@@ -670,6 +754,12 @@ class QShapesTab(qabstracttab.QAbstractTab):
         :type preservePosition: bool
         :rtype: None
         """
+
+        # Evaluate supplied nodes
+        #
+        if not (source.hasFn(om.MFn.kTransform) and target.hasFn(om.MFn.kTransform)):
+
+            return
 
         # Iterate through shapes
         #
@@ -757,20 +847,35 @@ class QShapesTab(qabstracttab.QAbstractTab):
 
         # Update spinners
         #
-        node = self.selection[0]
-        boundingBox = node.shapeBox()
+        if self.selectedNode.hasFn(om.MFn.kTransform):
 
-        self.widthSpinBox.blockSignals(True)
-        self.widthSpinBox.setValue(boundingBox.width)
-        self.widthSpinBox.blockSignals(False)
+            boundingBox = self.selectedNode.shapeBox()
 
-        self.heightSpinBox.blockSignals(True)
-        self.heightSpinBox.setValue(boundingBox.height)
-        self.heightSpinBox.blockSignals(False)
+            self.widthSpinBox.blockSignals(True)
+            self.widthSpinBox.setValue(boundingBox.width)
+            self.widthSpinBox.blockSignals(False)
 
-        self.depthSpinBox.blockSignals(True)
-        self.depthSpinBox.setValue(boundingBox.depth)
-        self.depthSpinBox.blockSignals(False)
+            self.heightSpinBox.blockSignals(True)
+            self.heightSpinBox.setValue(boundingBox.height)
+            self.heightSpinBox.blockSignals(False)
+
+            self.depthSpinBox.blockSignals(True)
+            self.depthSpinBox.setValue(boundingBox.depth)
+            self.depthSpinBox.blockSignals(False)
+
+        else:
+
+            self.widthSpinBox.blockSignals(True)
+            self.widthSpinBox.setValue(0.0)
+            self.widthSpinBox.blockSignals(False)
+
+            self.heightSpinBox.blockSignals(True)
+            self.heightSpinBox.setValue(0.0)
+            self.heightSpinBox.blockSignals(False)
+
+            self.depthSpinBox.blockSignals(True)
+            self.depthSpinBox.setValue(0.0)
+            self.depthSpinBox.blockSignals(False)
 
     def invalidateSwatches(self):
         """
@@ -803,13 +908,16 @@ class QShapesTab(qabstracttab.QAbstractTab):
 
             # Evaluate active selection
             #
-            if self.selectionCount == 0:
+            selection = [node for node in self.selection if node.hasFn(om.MFn.kTransform)]
+            selectionCount = len(selection)
+
+            if selectionCount == 0:
 
                 pass
 
-            elif self.selectionCount == 1:
+            elif selectionCount == 1:
 
-                node = self.selection[0]
+                node = selection[0]
                 shapes = node.shapes()
                 numShapes = len(shapes)
 
@@ -820,7 +928,7 @@ class QShapesTab(qabstracttab.QAbstractTab):
 
             else:
 
-                startNode = self.selection[0]
+                startNode = selection[0]
                 shapes = startNode.shapes()
                 numShapes = len(shapes)
 
@@ -829,7 +937,7 @@ class QShapesTab(qabstracttab.QAbstractTab):
                     color = QtGui.QColor.fromRgbF(*shapes[0].wireColorRGB)
                     self.startColorChanged.emit(color)
 
-                endNode = self.selection[-1]
+                endNode = selection[-1]
                 shapes = endNode.shapes()
                 numShapes = len(shapes)
 
@@ -840,6 +948,8 @@ class QShapesTab(qabstracttab.QAbstractTab):
 
         else:
 
+            # Emit color change to force gradient update
+            #
             self.startColorChanged.emit(self._startColor)
             self.endColorChanged.emit(self._endColor)
 
@@ -877,10 +987,18 @@ class QShapesTab(qabstracttab.QAbstractTab):
             QtWidgets.QMessageBox.warning(self, 'Save Shape', 'No controls selected to save shapes from!')
             return
 
+        # Evaluate selected node
+        #
+        selectedNode = self.selection[0]
+
+        if not selectedNode.hasFn(om.MFn.kTransform):
+
+            QtWidgets.QMessageBox.warning(self, 'Save Shape', 'No controls selected to save shapes from!')
+            return
+
         # Prompt user for shape name
         #
-        node = self.selection[0]
-        nodeName = node.name()
+        nodeName = selectedNode.name()
 
         shapeName, success = QtWidgets.QInputDialog.getText(
             self,
@@ -892,7 +1010,7 @@ class QShapesTab(qabstracttab.QAbstractTab):
         if success and not stringutils.isNullOrEmpty(shapeName):
 
             filePath = self.scene.getAbsoluteShapePath(shapeName)
-            mshapeparser.createShapeTemplate(node.object(), filePath)
+            mshapeparser.createShapeTemplate(selectedNode.object(), filePath)
 
             self.invalidateShapes()
 
@@ -936,7 +1054,7 @@ class QShapesTab(qabstracttab.QAbstractTab):
         row = rows[0]
         filename = self.shapeItemModel.item(row).text()
 
-        self.addShape(filename, *self.selection)
+        self.addCustomShape(filename, *self.selection)
 
     @QtCore.Slot()
     def on_addStarPushButton_clicked(self):
@@ -1125,7 +1243,15 @@ class QShapesTab(qabstracttab.QAbstractTab):
         :rtype: None
         """
 
-        if self.selectedNode is not None:
+        # Evaluate current selection
+        #
+        if self.selectedNode is None:
+
+            return
+
+        # Evaluate selected node
+        #
+        if self.selectedNode.hasFn(om.MFn.kTransform):
 
             boundingBox = self.selectedNode.shapeBox()
             scale = self.scaleSpinBox.value() / 100.0
@@ -1148,7 +1274,15 @@ class QShapesTab(qabstracttab.QAbstractTab):
         :rtype: None
         """
 
-        if self.selectedNode is not None:
+        # Evaluate current selection
+        #
+        if self.selectedNode is None:
+
+            return
+
+        # Evaluate selected node
+        #
+        if self.selectedNode.hasFn(om.MFn.kTransform):
 
             boundingBox = self.selectedNode.shapeBox()
             scale = self.scaleSpinBox.value() / 100.0

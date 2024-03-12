@@ -432,10 +432,6 @@ class QConstraintsTab(qabstracttab.QAbstractTab):
             index = self.targetItemModel.index(i, 1)
             self.targetItemModel.setData(index, str(target.weight()), role=QtCore.Qt.DisplayRole)
 
-        # Resize columns
-        #
-        self.targetTableView.resizeColumnToContents(0)
-
     def invalidateWeight(self):
         """
         Refreshes the weight spin-box.
@@ -685,6 +681,15 @@ class QConstraintsTab(qabstracttab.QAbstractTab):
             # Evaluate active selection
             #
             if self.selectionCount == 0:
+
+                sender.setChecked(False)
+                return
+
+            # Evaluate selected node
+            #
+            selectedNode = self.selection[0]
+
+            if not (selectedNode.hasFn(om.MFn.kTransform) and not selectedNode.hasFn(om.MFn.kConstraint, om.MFn.kPluginConstraintNode)):
 
                 sender.setChecked(False)
                 return

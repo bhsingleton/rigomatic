@@ -2,7 +2,7 @@ from maya import cmds as mc
 from maya.api import OpenMaya as om
 from Qt import QtCore, QtWidgets, QtGui
 from dcc.python import stringutils
-from dcc.maya.libs import attributeutils, dagutils
+from dcc.maya.libs import attributeutils, plugutils, dagutils
 from dcc.maya.decorators.undo import undo
 from dcc.generators.inclusiverange import inclusiveRange
 from . import qabstracttab
@@ -429,10 +429,12 @@ class QAttributesTab(qabstracttab.QAbstractTab):
 
         if not stringutils.isNullOrEmpty(proxy):
 
-            node, plug = dagutils.getMObject(proxy)
-            name = kwargs.get('longName', plug.partialName(useLongNames=True))
+            nodeName, plugPath = proxy.split('.')
+            node = dagutils.getMObject(nodeName)
+            plug = plugutils.findPlug(node, plugPath)
+            longName = kwargs.get('longName', plug.partialName(useLongNames=True))
 
-            self.addProxyAttribute(self.selectedNode, name, plug)
+            self.addProxyAttribute(self.selectedNode, longName, plug)
 
         else:
 
