@@ -327,6 +327,17 @@ class QRenameTab(qabstracttab.QAbstractTab):
         self._before = [node.name() for node in self._nodes]
         self._after = copy(self._before)
 
+        # Check if trim is enabled
+        #
+        if self.trimGroupBox.isChecked():
+
+            leftTrim = self.leftSpinBox.value()
+            rightTrim = self.rightSpinBox.value()
+
+            for (i, name) in enumerate(self._after):
+
+                self._after[i] = name[leftTrim:(len(name) - rightTrim)]
+
         # Check if concatenate is enabled
         #
         if self.concatenateGroupBox.isChecked():
@@ -378,17 +389,6 @@ class QRenameTab(qabstracttab.QAbstractTab):
                 # Format full-name and sanitize
                 #
                 self._after[i] = stringutils.slugify(f'{prefix}{body}{suffix}', whitespace='_', illegal='_')
-
-        # Check if trim is enabled
-        #
-        if self.trimGroupBox.isChecked():
-
-            leftTrim = self.leftSpinBox.value()
-            rightTrim = self.rightSpinBox.value()
-
-            for (i, name) in enumerate(self._after):
-
-                self._after[i] = name[leftTrim:(len(name) - rightTrim)]
 
         # Check if replace is enabled
         #
