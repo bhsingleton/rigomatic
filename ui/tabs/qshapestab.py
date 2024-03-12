@@ -514,7 +514,7 @@ class QShapesTab(qabstracttab.QAbstractTab):
         # Create curve from points
         #
         node = self.scene.createNode('transform', name='curve1')
-        helper = node.addPointHelper('custom')
+        helper = node.addPointHelper('custom', size=1.0)
         helper.setAttr('controlPoints', points)
 
         node.select(replace=True)
