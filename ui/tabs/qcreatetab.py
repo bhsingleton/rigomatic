@@ -38,6 +38,7 @@ class QCreateTab(qabstracttab.QAbstractTab):
         self._selectionCount = 0
         self._selectedNode = None
         self._currentNode = None
+        self._currentColor = (0.5, 0.5, 0.5)
         self._currentMatrix = om.MMatrix.kIdentity
 
         # Declare public variables
@@ -165,11 +166,57 @@ class QCreateTab(qabstracttab.QAbstractTab):
         self.attributeTreeView.setModel(self.attributeItemFilterModel)
         self.attributeTreeView.setItemDelegate(self.attributeStyledItemDelegate)
 
-    def alignFlags(self):
+    def loadSettings(self, settings):
         """
-        Returns the align flags.
+        Loads the user settings.
 
-        :rtype: Dict[str, Any]
+        :type settings: QtCore.QSettings
+        :rtype: None
+        """
+
+        # Call parent method
+        #
+        super(QCreateTab, self).loadSettings(settings)
+
+        # Load user preferences
+        #
+        color = QtGui.QColor(settings.value('tabs/create/color', defaultValue=QtCore.Qt.black))
+        self._currentColor = (color.redF(), color.greenF(), color.blueF())
+
+    def saveSettings(self, settings):
+        """
+        Saves the user settings.
+
+        :type settings: QtCore.QSettings
+        :rtype: None
+        """
+
+        # Call parent method
+        #
+        super(QCreateTab, self).saveSettings(settings)
+
+        # Save user preferences
+        #
+        color = QtGui.QColor.fromRgbF(*self._currentColor)
+        settings.setValue('tabs/create/color', color)
+
+    def wireColor(self):
+        """
+        Returns the current wire color.
+
+        :rtype: Tuple[float, float, float]
+        """
+
+        color = self.wireColorButton.color()
+        red, green, blue = color.redF(), color.greenF(), color.blueF()
+
+        return (red, green, blue)
+
+    def alignments(self):
+        """
+        Returns the alignments flags.
+
+        :rtype: Dict[str, bool]
         """
 
         skipTranslate = {f'skipTranslate{axis}': not match for (match, axis) in zip(self.translateXYZWidget.matches(), ('X', 'Y', 'Z'))}
@@ -237,40 +284,53 @@ class QCreateTab(qabstracttab.QAbstractTab):
                 shape.wireColorRGB = wireColor
 
     @undo(name='Create Node')
-    def createNode(self, typeName, name='', matrix=om.MMatrix.kIdentity, locator=False, helper=False):
+    def createNode(self, typeName, **kwargs):
         """
         Returns a new node derived from the specified type.
 
         :type typeName: str
-        :type name: str
-        :type matrix: om.MMatrix
-        :type locator: bool
-        :type helper: bool
+        :key name: str
+        :key matrix: om.MMatrix
+        :key color = Tuple[float, float, float]
+        :key locator: bool
+        :key helper: bool
         :rtype: mpynode.MPyNode
         """
 
         # Create node
         #
+        name = kwargs.get('name', '')
         cleanName = stringutils.slugify(name)
-        name = cleanName if self.scene.isNameUnique(cleanName) and not stringutils.isNullOrEmpty(name) else f'{typeName}1'
+        uniqueName = cleanName if self.scene.isNameUnique(cleanName) and not stringutils.isNullOrEmpty(name) else f'{typeName}1'
 
-        node = self.scene.createNode(typeName, name=name)
+        node = self.scene.createNode(typeName, name=uniqueName)
+
+        # Update transform matrix
+        #
+        matrix = kwargs.get('matrix', om.MMatrix.kIdentity)
         node.setMatrix(matrix)
-        node.select(replace=True)
 
         # Add any requested shapes
         #
+        locator = kwargs.get('locator', False)
+        helper = kwargs.get('helper', False)
+        colorRGB = kwargs.get('color', None)
+
         if locator:
 
-            node.addLocator()
+            node.addLocator(colorRGB=colorRGB)
 
         elif helper:
 
-            node.addPointHelper()
+            node.addPointHelper(colorRGB=colorRGB)
 
         else:
 
             pass
+
+        # Update active selection
+        #
+        node.select(replace=True)
 
         return node
 
@@ -631,26 +691,27 @@ class QCreateTab(qabstracttab.QAbstractTab):
 
         # Evaluate current selection
         #
-        if self.selectedNode is None:
+        selection = [node for node in self.selection if node.hasFn(om.MFn.kTransform)]
+        selectionCount = len(selection)
 
-            return
+        if selectionCount > 0:
 
-        # Evaluate first selected node
-        #
-        isTransform = self.selectedNode.hasFn(om.MFn.kTransform)
-
-        if not isTransform:
-
-            return
-
-        # Check if transform has any shapes
-        #
-        shape = self.selectedNode.shape()
-
-        if shape is not None:
+            # Adopt selected node's wire-color
+            #
+            node = selection[0]
+            shape = node.shape()
+            color = QtGui.QColor.fromRgbF(*shape.wireColorRGB) if (shape is not None) else QtGui.QColor.fromRgbF(*node.wireColorRGB)
 
             self.wireColorButton.blockSignals(True)
-            self.wireColorButton.setColor(QtGui.QColor.fromRgbF(*shape.wireColorRGB))
+            self.wireColorButton.setColor(color)
+            self.wireColorButton.blockSignals(False)
+
+        else:
+
+            # Revert back to internal color
+            #
+            self.wireColorButton.blockSignals(True)
+            self.wireColorButton.setColor(QtGui.QColor.fromRgbF(*self._currentColor))
             self.wireColorButton.blockSignals(False)
 
     def invalidatePivot(self):
@@ -875,6 +936,10 @@ class QCreateTab(qabstracttab.QAbstractTab):
 
             self.recolorNodes(*self.selection, wireColor=(color.redF(), color.greenF(), color.blueF()))
 
+        else:
+
+            self._currentColor = (color.redF(), color.greenF(), color.blueF())
+
     @QtCore.Slot()
     def on_transformPushButton_clicked(self):
         """
@@ -922,7 +987,13 @@ class QCreateTab(qabstracttab.QAbstractTab):
         :rtype: None
         """
 
-        self.createNode('transform', name=self.nameLineEdit.text(), matrix=self.currentMatrix, locator=True)
+        self.createNode(
+            'transform',
+            name=self.nameLineEdit.text(),
+            matrix=self.currentMatrix,
+            color=self.wireColor(),
+            locator=True
+        )
 
     @QtCore.Slot()
     def on_helperPushButton_clicked(self):
@@ -932,7 +1003,13 @@ class QCreateTab(qabstracttab.QAbstractTab):
         :rtype: None
         """
 
-        self.createNode('transform', name=self.nameLineEdit.text(), matrix=self.currentMatrix, helper=True)
+        self.createNode(
+            'transform',
+            name=self.nameLineEdit.text(),
+            matrix=self.currentMatrix,
+            color=self.wireColor(),
+            helper=True
+        )
 
     @QtCore.Slot()
     def on_intermediatePushButton_clicked(self):
@@ -1041,10 +1118,10 @@ class QCreateTab(qabstracttab.QAbstractTab):
 
         if self.selectionCount == 2:
 
-            alignFlags = self.alignFlags()
+            alignments = self.alignments()
             preserveShapes = self.preserveShapes()
 
-            self.alignNodes(self.selection[0], self.selection[1], preserveShapes=preserveShapes, **alignFlags)
+            self.alignNodes(self.selection[0], self.selection[1], preserveShapes=preserveShapes, **alignments)
 
         else:
 
