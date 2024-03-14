@@ -764,7 +764,7 @@ class QShapesTab(qabstracttab.QAbstractTab):
 
                 # Update control points
                 #
-                controlPoints = [point * parentMatrix * pivotMatrix.inverse() * scaleMatrix * pivotMatrix * parentMatrix.inverse() for point in shape.controlPoints()]
+                controlPoints = [om.MPoint(point) * parentMatrix * pivotMatrix.inverse() * scaleMatrix * pivotMatrix * parentMatrix.inverse() for point in shape.controlPoints()]
                 shape.setControlPoints(controlPoints)
 
     @undo(name='Resize Helpers')
