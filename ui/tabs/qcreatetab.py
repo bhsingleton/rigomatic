@@ -65,9 +65,13 @@ class QCreateTab(qabstracttab.QAbstractTab):
         self.translateCheckBox = None
         self.rotateCheckBox = None
         self.scaleCheckBox = None
-        self.freezePushButton = None
-        self.meltPushButton = None
-        self.freezeLine = None
+        self.freezePivotsPushButton = None
+        self.meltPivotsPushButton = None
+        self.freezeParentOffsetsPushButton = None
+        self.meltParentOffsetsPushButton = None
+        self.resetDivider = None
+        self.resetLabel = None
+        self.resetLine = None
         self.resetPivotsPushButton = None
         self.resetPreRotationsPushButton = None
         self.zeroTransformsPushButton = None
@@ -416,10 +420,59 @@ class QCreateTab(qabstracttab.QAbstractTab):
 
         return intermediates
 
-    @undo(name='Freeze Transform')
-    def freezeTransforms(self, *nodes, includeTranslate=True, includeRotate=True, includeScale=False):
+    @undo(name='Freeze Parent-Offsets')
+    def freezePivots(self, *nodes, includeTranslate=True, includeRotate=True, includeScale=False):
         """
-        Freezes the transform on the supplied node.
+        Freezes the pivots on the supplied nodes.
+
+        :type nodes: Union[mpynode.MPyNode, List[mpynode.MPyNode]]
+        :type includeTranslate: bool
+        :type includeRotate: bool
+        :type includeScale: bool
+        :rtype: None
+        """
+
+        # Iterate through nodes
+        #
+        for node in nodes:
+
+            # Check if this is a transform node
+            #
+            if not node.hasFn(om.MFn.kTransform):
+
+                continue
+
+            # Freeze transform
+            #
+            node.freezePivots(includeTranslate=includeTranslate, includeRotate=includeRotate, includeScale=includeScale)
+
+    @undo(name='Melt Pivots')
+    def meltPivots(self, *nodes):
+        """
+        Melts the pivots on the supplied nodes.
+
+        :type nodes: Union[mpynode.MPyNode, List[mpynode.MPyNode]]
+        :rtype: None
+        """
+
+        # Iterate through nodes
+        #
+        for node in nodes:
+
+            # Check if this is a transform node
+            #
+            if not node.hasFn(om.MFn.kTransform):
+
+                continue
+
+            # Unfreeze transform
+            #
+            node.unfreezePivots()
+
+    @undo(name='Freeze Parent Offsets')
+    def freezeParentOffsets(self, *nodes, includeTranslate=True, includeRotate=True, includeScale=False):
+        """
+        Freezes the parent offsets on the supplied nodes.
 
         :type nodes: Union[mpynode.MPyNode, List[mpynode.MPyNode]]
         :type includeTranslate: bool
@@ -442,10 +495,10 @@ class QCreateTab(qabstracttab.QAbstractTab):
             #
             node.freezeTransform(includeTranslate=includeTranslate, includeRotate=includeRotate, includeScale=includeScale)
 
-    @undo(name='Melt Transform')
-    def meltTransforms(self, *nodes):
+    @undo(name='Melt Parent Offsets')
+    def meltParentOffsets(self, *nodes):
         """
-        Melts the transform on the supplied node.
+        Melts the parent offsets on the supplied nodes.
 
         :type nodes: Union[mpynode.MPyNode, List[mpynode.MPyNode]]
         :rtype: None
@@ -1028,9 +1081,9 @@ class QCreateTab(qabstracttab.QAbstractTab):
             log.warning(f'Creating an intermediate expects at least 1 selected node ({self.selectionCount} selected)!')
 
     @QtCore.Slot()
-    def on_freezePushButton_clicked(self):
+    def on_freezePivotsPushButton_clicked(self):
         """
-        Slot method for the `freezePushButton` widget's `clicked` signal.
+        Slot method for the `freezePivotsPushButton` widget's `clicked` signal.
 
         :rtype: None
         """
@@ -1041,7 +1094,7 @@ class QCreateTab(qabstracttab.QAbstractTab):
 
         if self.selectionCount > 0:
 
-            self.freezeTransforms(
+            self.freezePivots(
                 *self.selection,
                 includeTranslate=includeTranslate,
                 includeRotate=includeRotate,
@@ -1049,16 +1102,49 @@ class QCreateTab(qabstracttab.QAbstractTab):
             )
 
     @QtCore.Slot()
-    def on_meltPushButton_clicked(self):
+    def on_meltPivotsPushButton_clicked(self):
         """
-        Slot method for the `freezePushButton` widget's `clicked` signal.
+        Slot method for the `meltPivotsPushButton` widget's `clicked` signal.
 
         :rtype: None
         """
 
         if self.selectionCount > 0:
 
-            self.meltTransforms(*self.selection)
+            self.meltPivots(*self.selection)
+
+    @QtCore.Slot()
+    def on_freezeParentOffsetsPushButton_clicked(self):
+        """
+        Slot method for the `freezeParentOffsetsPushButton` widget's `clicked` signal.
+
+        :rtype: None
+        """
+
+        includeTranslate = self.translateCheckBox.isChecked()
+        includeRotate = self.rotateCheckBox.isChecked()
+        includeScale = self.scaleCheckBox.isChecked()
+
+        if self.selectionCount > 0:
+
+            self.freezeParentOffsets(
+                *self.selection,
+                includeTranslate=includeTranslate,
+                includeRotate=includeRotate,
+                includeScale=includeScale
+            )
+
+    @QtCore.Slot()
+    def on_meltParentOffsetsPushButton_clicked(self):
+        """
+        Slot method for the `meltParentOffsetsPushButton` widget's `clicked` signal.
+
+        :rtype: None
+        """
+
+        if self.selectionCount > 0:
+
+            self.meltParentOffsets(*self.selection)
 
     @QtCore.Slot()
     def on_resetPivotsPushButton_clicked(self):
