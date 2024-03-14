@@ -3,6 +3,8 @@ import math
 
 from maya.api import OpenMaya as om
 from Qt import QtCore, QtWidgets, QtGui
+from itertools import chain
+from collections import namedtuple
 from enum import IntEnum
 from dcc.python import stringutils
 from dcc.maya.libs import transformutils, shapeutils
@@ -17,13 +19,27 @@ log = logging.getLogger(__name__)
 log.setLevel(logging.INFO)
 
 
-class Dimensions(IntEnum):
+Dimensions = namedtuple('Dimensions', ('width', 'height', 'depth'))
+
+
+class Dimension(IntEnum):
     """
-    Collections of all available dimensions.
+    Enum class of all available dimensions.
     """
 
     WIDTH = 0
     HEIGHT = 1
+    DEPTH = 2
+
+
+class Pivot(IntEnum):
+    """
+    Enum class of all available pivots.
+    """
+
+    NONE = -1
+    LOCAL = 0
+    PARENT = 1
     DEPTH = 2
 
 
@@ -78,11 +94,20 @@ class QShapesTab(qabstracttab.QAbstractTab):
         self.removeShapesPushButton = None
 
         self.transformGroupBox = None
+        self.pivotWidget = None
+        self.pivotLabel = None
+        self.pivotButtonGroup =None
+        self.localRadioButton = None
+        self.parentRadioButton = None
+        self.worldRadioButton = None
         self.scaleWidget = None
         self.scaleLabel = None
         self.scaleSpinBox = None
         self.growPushButton = None
         self.shrinkPushButton = None
+        self.helperDivider = None
+        self.helperLabel = None
+        self.helperLine = None
         self.widthWidget = None
         self.widthLabel = None
         self.widthSpinBox = None
@@ -92,6 +117,8 @@ class QShapesTab(qabstracttab.QAbstractTab):
         self.depthWidget = None
         self.depthLabel = None
         self.depthSpinBox = None
+        self.fitPushButton = None
+        self.resetPushButton = None
 
         self.parentGroupBox = None
         self.parentPushButton = None
@@ -137,6 +164,13 @@ class QShapesTab(qabstracttab.QAbstractTab):
         self.filterLineEdit.textChanged.connect(self.shapeFilterItemModel.setFilterWildcard)
 
         self.shapeListView.setModel(self.shapeFilterItemModel)
+
+        # Initialize pivot button group
+        #
+        self.pivotButtonGroup = QtWidgets.QButtonGroup(parent=self.pivotWidget)
+        self.pivotButtonGroup.addButton(self.localRadioButton, id=0)
+        self.pivotButtonGroup.addButton(self.parentRadioButton, id=1)
+        self.pivotButtonGroup.addButton(self.worldRadioButton, id=2)
 
         # Connect start/end buttons to gradient
         #
@@ -283,7 +317,45 @@ class QShapesTab(qabstracttab.QAbstractTab):
         """
 
         self.preservePositionCheckBox.setChecked(preservePosition)
-    
+
+    def pivot(self):
+        """
+        Returns the current pivot.
+
+        :rtype: Pivot
+        """
+
+        return Pivot(self.pivotButtonGroup.checkedId())
+
+    def dimensions(self):
+        """
+        Returns the current dimensions.
+
+        :rtype: Dimensions
+        """
+
+        return Dimensions(self.widthSpinBox.value(), self.heightSpinBox.value(), self.depthSpinBox.value())
+
+    def setDimensions(self, dimensions):
+        """
+        Updates the current dimensions.
+
+        :type dimensions: Dimensions
+        :rtype: None
+        """
+
+        self.widthSpinBox.blockSignals(True)
+        self.widthSpinBox.setValue(dimensions.width)
+        self.widthSpinBox.blockSignals(False)
+
+        self.heightSpinBox.blockSignals(True)
+        self.heightSpinBox.setValue(dimensions.height)
+        self.heightSpinBox.blockSignals(False)
+
+        self.depthSpinBox.blockSignals(True)
+        self.depthSpinBox.setValue(dimensions.depth)
+        self.depthSpinBox.blockSignals(False)
+
     def useSelectedNodes(self):
         """
         Returns the `useSelectedNodes` flag.
@@ -595,13 +667,13 @@ class QShapesTab(qabstracttab.QAbstractTab):
             node.removeShapes()
 
     @undo(name='Colorize Shapes')
-    def colorizeShapes(self, startColor, endColor, *nodes):
+    def colorizeShapes(self, *nodes, startColor=None, endColor=None):
         """
         Applies a gradient to the supplied nodes.
 
+        :type nodes: Union[mpynode.MPyNode, List[mpynode.MPyNode]]
         :type startColor: QtGui.QColor
         :type endColor: QtGui.QColor
-        :type nodes: Union[mpynode.MPyNode, List[mpynode.MPyNode]]
         :rtype: None
         """
 
@@ -632,117 +704,113 @@ class QShapesTab(qabstracttab.QAbstractTab):
                 shape.wireColorRGB = (red, green, blue)
 
     @undo(name='Rescale Shapes')
-    def rescaleShapes(self, node, dimensions):
+    def rescaleShapes(self, *nodes, percentage=0.0):
         """
         Resizes the supplied shapes along the specified dimension.
 
-        :type node: mpynode.MPyNode
-        :type dimensions: om.MBoundingBox
+        :type nodes: Union[mpynode.MPyNode, List[mpynode.MPyNode]]
+        :type percentage: float
         :rtype: None
         """
 
-        # Check if this is a transform node
+        # Iterate through nodes
         #
-        if not node.hasFn(om.MFn.kTransform):
+        for node in nodes:
 
-            return
+            # Evaluate node type
+            #
+            if not node.hasFn(om.MFn.kTransform):
 
-        # Compose scale matrix
-        #
-        boundingBox = node.shapeBox()
-        scaleX = (dimensions.width / boundingBox.width) if (boundingBox.width != 0.0) else 1e-3
-        scaleY = (dimensions.height / boundingBox.height) if (boundingBox.height != 0.0) else 1e-3
-        scaleZ = (dimensions.depth / boundingBox.depth) if (boundingBox.depth != 0.0) else 1e-3
-        scale = om.MVector(scaleX, scaleY, scaleZ)
-
-        scaleMatrix = transformutils.createScaleMatrix(scale)
-        pivotMatrix = transformutils.createTranslateMatrix(boundingBox.center)
-
-        matrix = scaleMatrix * pivotMatrix
-
-        # Iterate through shapes
-        #
-        isSurface, isCurve, isLocator = False, False, False
-        controlPoints = None
-        localMatrix = None
-
-        for shape in node.iterShapes():
-
-            isSurface = shape.hasFn(om.MFn.kSurface)
-            isCurve = shape.hasFn(om.MFn.kCurve)
-            isLocator = shape.hasFn(om.MFn.kLocator)
-
-            if isSurface or isCurve:
-
-                controlPoints = [point * pivotMatrix.inverse() * matrix for point in shape.controlPoints()]
-                shape.setControlPoints(controlPoints)
-
-            elif isLocator:
-
-                localMatrix = shape.localMatrix() * pivotMatrix.inverse() * matrix
-                shape.setLocalMatrix(localMatrix)
-
-            else:
-
-                log.warning(f'No support for {shape.apiTypeStr} shapes!')
                 continue
 
-    @undo(name='Resize Shapes')
-    def resizeShapes(self, node, dimension, value):
+            # Get pivot matrix
+            #
+            boundingBox = node.shapeBox()
+
+            parentMatrix = node.worldMatrix()
+            localMatrix = transformutils.createTranslateMatrix(boundingBox.center) * parentMatrix
+            worldMatrix = om.MMatrix.kIdentity
+
+            pivot = self.pivot()
+            pivotMatrix = localMatrix if (pivot == Pivot.LOCAL) else parentMatrix if (pivot == Pivot.PARENT) else worldMatrix
+
+            # Compose scale matrix
+            #
+            factor = percentage / 100.0
+            width = boundingBox.width + (boundingBox.width * factor)
+            height = boundingBox.height + (boundingBox.height * factor)
+            depth = boundingBox.depth + (boundingBox.depth * factor)
+
+            scaleX = (abs(width) / boundingBox.width) if (boundingBox.width != 0.0) else 1e-3
+            scaleY = (abs(height) / boundingBox.height) if (boundingBox.height != 0.0) else 1e-3
+            scaleZ = (abs(depth) / boundingBox.depth) if (boundingBox.depth != 0.0) else 1e-3
+            scale = om.MVector(scaleX, scaleY, scaleZ)
+
+            scaleMatrix = transformutils.createScaleMatrix(scale)
+
+            # Iterate through shapes
+            #
+            for shape in node.iterShapes():
+
+                # Evaluate shape type
+                #
+                isSurface = shape.hasFn(om.MFn.kSurface)
+                isCurve = shape.hasFn(om.MFn.kCurve)
+
+                if not (isSurface or isCurve):
+
+                    log.warning(f'No scale support for {shape.apiTypeStr} shapes!')
+                    continue
+
+                # Update control points
+                #
+                controlPoints = [point * parentMatrix * pivotMatrix.inverse() * scaleMatrix * pivotMatrix * parentMatrix.inverse() for point in shape.controlPoints()]
+                shape.setControlPoints(controlPoints)
+
+    @undo(name='Resize Helpers')
+    def resizeHelpers(self, *nodes, dimension=None, amount=0.0):
         """
         Resizes the supplied shapes along the specified dimension.
 
-        :type node: mpynode.MPyNode
-        :type dimension: Dimensions
-        :type value: float
+        :type nodes: Union[mpynode.MPyNode, List[mpynode.MPyNode]]
+        :type dimension: Dimension
+        :type amount: float
         :rtype: None
         """
 
-        # Check if this is a transform node
+        # Iterate through nodes
         #
-        if not node.hasFn(om.MFn.kTransform):
+        for node in nodes:
 
-            return
+            # Evaluate node type
+            #
+            if not node.hasFn(om.MFn.kTransform):
 
-        # Compose scale matrix
-        #
-        boundingBox = node.shapeBox()
-        currentValue = getattr(boundingBox, dimension.name.lower())
-
-        scale = om.MVector(1.0, 1.0, 1.0)
-        scale[dimension] = (value / currentValue) if currentValue > 0.0 else 1e-3
-
-        scaleMatrix = transformutils.createScaleMatrix(scale)
-        pivotMatrix = transformutils.createTranslateMatrix(boundingBox.center)
-
-        matrix = scaleMatrix * pivotMatrix
-
-        # Iterate through shapes
-        #
-        isSurface, isCurve, isLocator = False, False, False
-        controlPoints = None
-        localMatrix = None
-
-        for shape in node.iterShapes():
-
-            isSurface = shape.hasFn(om.MFn.kSurface)
-            isCurve = shape.hasFn(om.MFn.kCurve)
-            isLocator = shape.hasFn(om.MFn.kLocator)
-
-            if isSurface or isCurve:
-
-                controlPoints = [point * pivotMatrix.inverse() * matrix for point in shape.controlPoints()]
-                shape.setControlPoints(controlPoints)
-
-            elif isLocator:
-
-                localMatrix = shape.localMatrix() * pivotMatrix.inverse() * matrix
-                shape.setLocalMatrix(localMatrix)
-
-            else:
-
-                log.warning(f'No support for {shape.apiTypeStr} shapes!')
                 continue
+
+            # Iterate through shapes
+            #
+            for locator in node.iterShapes(apiType=om.MFn.kLocator):
+
+                # Check if size requires normalizing
+                #
+                size = locator.tryGetAttr('size', default=1.0)
+                localScale = om.MVector(locator.localScale)
+
+                if size != 1.0:
+
+                    locator.size = 1.0
+                    localScale *= size
+                    locator.localScale = localScale
+
+                # Update local-scale
+                #
+                localScale[dimension] = amount
+                locator.localScale = localScale
+
+        # Refresh dimension widgets
+        #
+        self.invalidateDimensions()
 
     @undo(name='Parent Shapes')
     def parentShapes(self, source, target, preservePosition=False):
@@ -815,6 +883,69 @@ class QShapesTab(qabstracttab.QAbstractTab):
 
                     log.warning(f'No support for {shape.apiTypeStr} shapes!')
 
+    @undo(name='Fit Helpers')
+    def fitHelpers(self, *nodes):
+        """
+        Scales the supplied helpers to fit between each node.
+
+        :type nodes: Union[mpynode.MPyNode, List[mpynode.MPyNode]]
+        :rtype: None
+        """
+
+        # Iterate through nodes
+        #
+        numNodes = len(nodes)
+        lastIndex = numNodes - 1
+
+        for (i, node) in enumerate(nodes):
+
+            # Iterate through shapes
+            #
+            for locator in node.iterShapes(apiType=om.MFn.kLocator):
+
+                # Check if locator is compatible
+                #
+                if locator.typeName != 'pointHelper':
+
+                    continue
+
+                # Evaluate position in chain
+                #
+                if i == lastIndex:
+
+                    locator.reorientAndScaleToFit()
+
+                else:
+
+                    locator.reorientAndScaleToFit(nodes[i + 1])
+
+        # Refresh dimension widgets
+        #
+        self.invalidateDimensions()
+
+    @undo(name='Reset Helpers')
+    def resetHelpers(self, *nodes):
+        """
+        Resets the local matrix on the supplied helpers.
+
+        :type nodes: Union[mpynode.MPyNode, List[mpynode.MPyNode]]
+        :rtype: None
+        """
+
+        # Iterate through nodes
+        #
+        for node in nodes:
+
+            # Iterate through shapes
+            #
+            for locator in node.iterShapes(apiType=om.MFn.kLocator):
+
+                locator.resetLocalMatrix()
+
+        # Refresh dimension widgets
+        #
+        self.invalidateDimensions()
+
     def invalidateShapes(self):
         """
         Repopulates the shape list widget.
@@ -833,50 +964,50 @@ class QShapesTab(qabstracttab.QAbstractTab):
             index = self.shapeItemModel.index(i, 0)
             self.shapeItemModel.setData(index, filename, role=QtCore.Qt.DisplayRole)
 
-    def invalidateBoundingBox(self):
+    def invalidateDimensions(self):
         """
-        Refreshes the bounding-box spin boxes.
+        Refreshes the dimension spin boxes.
 
         :rtype: None
         """
 
         # Evaluate active selection
         #
-        if self.selectionCount == 0:
+        selection = [node for node in self.selection if node.hasFn(om.MFn.kTransform)]
+        selectionCount = len(selection)
 
+        if selectionCount == 0:
+
+            self.setDimensions(Dimensions(0.0, 0.0, 0.0))
             return
 
-        # Update spinners
+        # Evaluate shapes
         #
-        if self.selectedNode.hasFn(om.MFn.kTransform):
+        locators = list(chain(*[node.shapes(apiType=om.MFn.kLocator) for node in selection]))
+        numLocators = len(locators)
 
-            boundingBox = self.selectedNode.shapeBox()
+        if numLocators == 0:
 
-            self.widthSpinBox.blockSignals(True)
-            self.widthSpinBox.setValue(boundingBox.width)
-            self.widthSpinBox.blockSignals(False)
+            self.setDimensions(Dimensions(0.0, 0.0, 0.0))
+            return
 
-            self.heightSpinBox.blockSignals(True)
-            self.heightSpinBox.setValue(boundingBox.height)
-            self.heightSpinBox.blockSignals(False)
+        # Evaluate shapes under transform
+        #
+        weight = 1.0 / numLocators if (numLocators > 0) else 0.0
+        width, height, depth = 0.0, 0.0, 0.0
 
-            self.depthSpinBox.blockSignals(True)
-            self.depthSpinBox.setValue(boundingBox.depth)
-            self.depthSpinBox.blockSignals(False)
+        for locator in locators:
 
-        else:
+            size = locator.tryGetAttr('size', default=1.0)
+            localScale = om.MVector(locator.localScale)
 
-            self.widthSpinBox.blockSignals(True)
-            self.widthSpinBox.setValue(0.0)
-            self.widthSpinBox.blockSignals(False)
+            width += (localScale.x * size) * weight
+            height += (localScale.y * size) * weight
+            depth += (localScale.z * size) * weight
 
-            self.heightSpinBox.blockSignals(True)
-            self.heightSpinBox.setValue(0.0)
-            self.heightSpinBox.blockSignals(False)
-
-            self.depthSpinBox.blockSignals(True)
-            self.depthSpinBox.setValue(0.0)
-            self.depthSpinBox.blockSignals(False)
+        # Update bounding-box spinners
+        #
+        self.setDimensions(Dimensions(width, height, depth))
 
     def invalidateSwatches(self):
         """
@@ -968,7 +1099,7 @@ class QShapesTab(qabstracttab.QAbstractTab):
 
         # Invalidate user interface
         #
-        self.invalidateBoundingBox()
+        self.invalidateDimensions()
         self.invalidateGradient()
     # endregion
 
@@ -1244,28 +1375,9 @@ class QShapesTab(qabstracttab.QAbstractTab):
         :rtype: None
         """
 
-        # Evaluate current selection
-        #
-        if self.selectedNode is None:
+        if self.selectionCount > 0:
 
-            return
-
-        # Evaluate selected node
-        #
-        if self.selectedNode.hasFn(om.MFn.kTransform):
-
-            boundingBox = self.selectedNode.shapeBox()
-            scale = self.scaleSpinBox.value() / 100.0
-            width = boundingBox.width + (boundingBox.width * scale)
-            height = boundingBox.height + (boundingBox.height * scale)
-            depth = boundingBox.depth + (boundingBox.depth * scale)
-
-            minPoint = om.MPoint(-width * 0.5, -height * 0.5, -depth * 0.5)
-            maxPoint = om.MPoint(width * 0.5, height * 0.5, depth * 0.5)
-            scaledBox = om.MBoundingBox(minPoint, maxPoint)
-
-            self.rescaleShapes(self.selectedNode, scaledBox)
-            self.invalidateBoundingBox()
+            self.rescaleShapes(*self.selection, percentage=self.scaleSpinBox.value())
 
     @QtCore.Slot()
     def on_shrinkPushButton_clicked(self):
@@ -1275,67 +1387,93 @@ class QShapesTab(qabstracttab.QAbstractTab):
         :rtype: None
         """
 
-        # Evaluate current selection
+        if self.selectionCount > 0:
+
+            self.rescaleShapes(*self.selection, percentage=-self.scaleSpinBox.value())
+
+    @QtCore.Slot()
+    def on_widthSpinBox_editingFinished(self):
+        """
+        Slot method for the `widthSpinBox` widget's `editingFinished` signal.
+
+        :rtype: None
+        """
+
+        sender = self.sender()
+
+        if self.selectionCount > 0:
+
+            self.resizeHelpers(*self.selection, dimension=Dimension.WIDTH, amount=sender.value())
+
+        sender.clearFocus()
+
+    @QtCore.Slot()
+    def on_heightSpinBox_editingFinished(self):
+        """
+        Slot method for the `heightSpinBox` widget's `editingFinished` signal.
+
+        :rtype: None
+        """
+
+        sender = self.sender()
+
+        if self.selectionCount > 0:
+
+            self.resizeHelpers(*self.selection, dimension=Dimension.HEIGHT, amount=sender.value())
+
+        sender.clearFocus()
+
+    @QtCore.Slot()
+    def on_depthSpinBox_editingFinished(self):
+        """
+        Slot method for the `depthSpinBox` widget's `editingFinished` signal.
+
+        :rtype: None
+        """
+
+        sender = self.sender()
+
+        if self.selectionCount > 0:
+
+            self.resizeHelpers(*self.selection, dimension=Dimension.DEPTH, amount=sender.value())
+
+        sender.clearFocus()
+
+    @QtCore.Slot()
+    def on_fitPushButton_clicked(self):
+        """
+        Slot method for the `fitPushButton` widget's `clicked` signal.
+
+        :rtype: None
+        """
+
+        # Evaluate active selection
         #
-        if self.selectedNode is None:
+        if self.selectionCount > 0:
 
-            return
+            self.fitHelpers(*self.selection)
 
-        # Evaluate selected node
+        else:
+
+            log.warning(f'Fit helpers expects at least 1 selected node ({self.selectionCount} selected)!')
+
+    @QtCore.Slot()
+    def on_resetPushButton_clicked(self):
+        """
+        Slot method for the `resetPushButton` widget's `clicked` signal.
+
+        :rtype: None
+        """
+
+        # Evaluate active selection
         #
-        if self.selectedNode.hasFn(om.MFn.kTransform):
-
-            boundingBox = self.selectedNode.shapeBox()
-            scale = self.scaleSpinBox.value() / 100.0
-            width = boundingBox.width - (boundingBox.width * scale)
-            height = boundingBox.height - (boundingBox.height * scale)
-            depth = boundingBox.depth - (boundingBox.depth * scale)
-
-            minPoint = om.MPoint(-width * 0.5, -height * 0.5, -depth * 0.5)
-            maxPoint = om.MPoint(width * 0.5, height * 0.5, depth * 0.5)
-            scaledBox = om.MBoundingBox(minPoint, maxPoint)
-
-            self.rescaleShapes(self.selectedNode, scaledBox)
-            self.invalidateBoundingBox()
-
-    @QtCore.Slot(float)
-    def on_widthSpinBox_valueChanged(self, value):
-        """
-        Slot method for the `widthSpinBox` widget's `valueChanged` signal.
-
-        :type value: float
-        :rtype: None
-        """
-
         if self.selectionCount > 0:
 
-            self.resizeShapes(self.selection[0], Dimensions.WIDTH, value)
+            self.resetHelpers(*self.selection)
 
-    @QtCore.Slot(float)
-    def on_heightSpinBox_valueChanged(self, value):
-        """
-        Slot method for the `heightSpinBox` widget's `valueChanged` signal.
+        else:
 
-        :type value: float
-        :rtype: None
-        """
-
-        if self.selectionCount > 0:
-
-            self.resizeShapes(self.selection[0], Dimensions.HEIGHT, value)
-
-    @QtCore.Slot(float)
-    def on_depthSpinBox_valueChanged(self, value):
-        """
-        Slot method for the `depthSpinBox` widget's `valueChanged` signal.
-
-        :type value: float
-        :rtype: None
-        """
-
-        if self.selectionCount > 0:
-
-            self.resizeShapes(self.selection[0], Dimensions.DEPTH, value)
+            log.warning(f'Reset helpers expects at least 1 selected node ({self.selectionCount} selected)!')
 
     @QtCore.Slot()
     def on_startColorButton_clicked(self):
@@ -1529,7 +1667,7 @@ class QShapesTab(qabstracttab.QAbstractTab):
         #
         if self.selectionCount >= 2:
 
-            self.colorizeShapes(self.startColor(), self.endColor(), *self.selection)
+            self.colorizeShapes(*self.selection, startColor=self.startColor(), endColor=self.endColor())
 
         else:
 
