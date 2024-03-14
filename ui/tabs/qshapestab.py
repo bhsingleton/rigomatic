@@ -6,6 +6,7 @@ from Qt import QtCore, QtWidgets, QtGui
 from itertools import chain
 from collections import namedtuple
 from enum import IntEnum
+from random import randint
 from dcc.python import stringutils
 from dcc.maya.libs import transformutils, shapeutils
 from dcc.maya.json import mshapeparser
@@ -82,10 +83,10 @@ class QShapesTab(qabstracttab.QAbstractTab):
         self.shapeListView = None
         self.shapeItemModel = None
         self.shapeFilterItemModel = None
-        self.addShapePushButton = None
-        self.addStarPushButton = None
-        self.addLocatorPushButton = None
-        self.addHelperPushButton = None
+        self.createCustomPushButton = None
+        self.createStarPushButton = None
+        self.createLocatorPushButton = None
+        self.createHelperPushButton = None
         self.edgeToCurvePushButton = None
         self.edgeToHelperPushButton = None
         self.degreeSpinBox = None
@@ -209,6 +210,8 @@ class QShapesTab(qabstracttab.QAbstractTab):
                 self.swatchesButtonGroup.addButton(button, id=index)
 
                 index += 1
+
+        self.ensureSwatches()
 
         # Invalidate shape items
         #
@@ -415,99 +418,132 @@ class QShapesTab(qabstracttab.QAbstractTab):
         self._endColor = QtGui.QColor(endColor)
         self.endColorChanged.emit(self._endColor)
 
-    @undo(name='Add Custom Shape')
-    def addCustomShape(self, filename, *nodes):
+    def ensureSwatches(self):
+        """
+        Randomizes the custom swatches for first time users.
+
+        :rtype: None
+        """
+
+        # Evaluate swatches
+        #
+        numSwatches = QtWidgets.QColorDialog.customCount()
+        isWhite = all([QtWidgets.QColorDialog.customColor(i).lightnessF() == 1.0 for i in range(numSwatches)])
+
+        if not isWhite:
+
+            return
+
+        # Randomize swatches
+        #
+        for i in range(numSwatches):
+            
+            red, green, blue = randint(0, 255), randint(0, 255), randint(0, 255)
+            color = QtGui.QColor(red, green, blue)
+
+            QtWidgets.QColorDialog.setCustomColor(i, color)
+
+    @undo(name='Create Custom Shape')
+    def createCustomShape(self, filename, parent=None):
         """
         Adds the specified custom shape to the supplied nodes.
 
         :type filename: str
-        :type nodes: Union[mpynode.MPyNode, List[mpynode.MPyNode]]
+        :type parent: Union[mpynode.MPyNode, None]
         :rtype: None
         """
 
-        # Iterate through nodes
+        # Evaluate parent
         #
-        for node in nodes:
+        if parent is None:
 
-            # Check if this is a transform node
-            #
-            if not node.hasFn(om.MFn.kTransform):
+            parent = self.scene.createNode('transform')
 
-                continue
+        # Evaluate parent type
+        #
+        if parent.hasFn(om.MFn.kTransform):
 
-            # Add custom shape to transform
-            #
-            node.addShape(filename)
+            parent.addShape(filename)
 
-    @undo(name='Add Star')
-    def addStar(self, *nodes, numPoints=12):
+        else:
+
+            log.warning(f'Cannot add custom shape to "{parent.typeName}" node!')
+
+    @undo(name='Create Star')
+    def createStar(self, numPoints=12, parent=None):
         """
         Adds a star to the supplied nodes.
 
-        :type nodes: Union[mpynode.MPyNode, List[mpynode.MPyNode]]
         :type numPoints: int
+        :type parent: Union[mpynode.MPyNode, None]
         :rtype: None
         """
 
-        # Iterate through nodes
+        # Evaluate parent
         #
-        for node in nodes:
+        if parent is None:
 
-            # Check if this is a transform node
-            #
-            if not node.hasFn(om.MFn.kTransform):
+            parent = self.scene.createNode('transform')
 
-                continue
+        # Evaluate parent type
+        #
+        if parent.hasFn(om.MFn.kTransform):
 
-            # Add star to transform
-            #
-            node.addStar(numPoints=numPoints)
+            parent.addStar(numPoints=numPoints)
 
-    @undo(name='Add Locator')
-    def addLocator(self, *nodes):
+        else:
+
+            log.warning(f'Cannot add star to "{parent.typeName}" node!')
+
+    @undo(name='Create Locator')
+    def createLocator(self, parent=None):
         """
         Adds a locator to the supplied nodes.
 
-        :type nodes: Union[mpynode.MPyNode, List[mpynode.MPyNode]]
+        :type parent: Union[mpynode.MPyNode, None]
         :rtype: None
         """
 
-        # Iterate through nodes
+        # Evaluate parent
         #
-        for node in nodes:
+        if parent is None:
 
-            # Check if this is a transform node
-            #
-            if not node.hasFn(om.MFn.kTransform):
+            parent = self.scene.createNode('transform')
 
-                continue
+        # Evaluate parent type
+        #
+        if parent.hasFn(om.MFn.kTransform):
 
-            # Add locator to transform
-            #
-            node.addLocator()
+            parent.addLocator()
 
-    @undo(name='Add Point Helper')
-    def addHelper(self, *nodes):
+        else:
+
+            log.warning(f'Cannot add locator to "{parent.typeName}" node!')
+
+    @undo(name='Create Point Helper')
+    def createHelper(self, parent=None):
         """
         Adds a point helper to the supplied nodes.
 
-        :type nodes: Union[mpynode.MPyNode, List[mpynode.MPyNode]]
+        :type parent: Union[mpynode.MPyNode, None]
         :rtype: None
         """
 
-        # Iterate through nodes
+        # Evaluate parent
         #
-        for node in nodes:
+        if parent is None:
 
-            # Check if this is a transform node
-            #
-            if not node.hasFn(om.MFn.kTransform):
+            parent = self.scene.createNode('transform')
 
-                continue
+        # Evaluate parent type
+        #
+        if parent.hasFn(om.MFn.kTransform):
 
-            # Add point helper to transform
-            #
-            node.addPointHelper()
+            parent.addPointHelper()
+
+        else:
+
+            log.warning(f'Cannot add point helper to "{parent.typeName}" node!')
 
     @undo(name='Convert Edge to Curve')
     def convertEdgeToCurve(self, mesh, edgeComponent, degree=1, offset=0.0):
@@ -1157,9 +1193,9 @@ class QShapesTab(qabstracttab.QAbstractTab):
         self.invalidateShapes()
 
     @QtCore.Slot()
-    def on_addShapePushButton_clicked(self):
+    def on_createCustomPushButton_clicked(self):
         """
-        Slot method for the `addShapePushButton` widget's `clicked` signal.
+        Slot method for the `createShapePushButton` widget's `clicked` signal.
 
         :rtype: None
         """
@@ -1171,37 +1207,26 @@ class QShapesTab(qabstracttab.QAbstractTab):
 
         if numRows == 0:
 
-            log.warning('No custom shape selected to add to active selection!')
+            log.warning('No custom shape selected to create!')
             return
 
-        # Evaluate active selection
-        #
-        if self.selectionCount == 0:
-
-            log.warning('No nodes selected to add custom shape to!')
-            return
-
-        # Add custom shape
+        # Evaluate keyboard modifiers
         #
         row = rows[0]
         filename = self.shapeItemModel.item(row).text()
 
-        self.addCustomShape(filename, *self.selection)
+        modifiers = QtWidgets.QApplication.keyboardModifiers()
+        parent = self.selectedNode if (modifiers == QtCore.Qt.ShiftModifier) else None
+
+        self.createCustomShape(filename, parent=parent)
 
     @QtCore.Slot()
-    def on_addStarPushButton_clicked(self):
+    def on_createStarPushButton_clicked(self):
         """
-        Slot method for the `addStarPushButton` widget's `clicked` signal.
+        Slot method for the `createStarPushButton` widget's `clicked` signal.
 
         :rtype: None
         """
-
-        # Evaluate active selection
-        #
-        if self.selectionCount == 0:
-
-            log.warning('No controls selected to add star to!')
-            return
 
         # Prompt use for point quantity
         #
@@ -1217,43 +1242,40 @@ class QShapesTab(qabstracttab.QAbstractTab):
 
         if success:
 
-            self.addStar(*self.selection, numPoints=numPoints)
+            modifiers = QtWidgets.QApplication.keyboardModifiers()
+            parent = self.selectedNode if (modifiers == QtCore.Qt.ShiftModifier) else None
+
+            self.createStar(numPoints=numPoints, parent=parent)
+
+        else:
+
+            log.info('Operation aborted...')
 
     @QtCore.Slot()
-    def on_addLocatorPushButton_clicked(self):
+    def on_createLocatorPushButton_clicked(self):
         """
-        Slot method for the `addLocatorPushButton` widget's `clicked` signal.
+        Slot method for the `createLocatorPushButton` widget's `clicked` signal.
 
         :rtype: None
         """
 
-        # Evaluate active selection
-        #
-        if self.selectionCount > 0:
+        modifiers = QtWidgets.QApplication.keyboardModifiers()
+        parent = self.selectedNode if (modifiers == QtCore.Qt.ShiftModifier) else None
 
-            self.addLocator(*self.selection)
-
-        else:
-
-            log.warning(self, 'Add Locator', 'No controls selected to add locator to!')
+        self.createLocator(parent=parent)
 
     @QtCore.Slot()
-    def on_addHelperPushButton_clicked(self):
+    def on_createHelperPushButton_clicked(self):
         """
-        Slot method for the `addHelperPushButton` widget's `clicked` signal.
+        Slot method for the `createHelperPushButton` widget's `clicked` signal.
 
         :rtype: None
         """
 
-        # Evaluate active selection
-        #
-        if self.selectionCount > 0:
+        modifiers = QtWidgets.QApplication.keyboardModifiers()
+        parent = self.selectedNode if (modifiers == QtCore.Qt.ShiftModifier) else None
 
-            self.addHelper(*self.selection)
-
-        else:
-
-            log.warning(self, 'Add Helper', 'No controls selected to add helper to!')
+        self.createHelper(parent=parent)
 
     @QtCore.Slot()
     def on_edgeToCurvePushButton_clicked(self):
