@@ -80,6 +80,33 @@ class QAbstractTab(quicwidget.QUicWidget):
 
         pass
 
+    def currentName(self):
+        """
+        Returns the current node name.
+
+        :rtype: str
+        """
+
+        return self.window().currentName()
+
+    def currentColor(self):
+        """
+        Returns the current wire-color.
+
+        :rtype: Tuple[float, float, float]
+        """
+
+        return self.window().currentColor()
+
+    def colorType(self):
+        """
+        Returns the current color type.
+
+        :rtype: ColorType
+        """
+
+        return self.window().colorType()
+
     def invalidate(self, reason=None):
         """
         Refreshes the user interface.

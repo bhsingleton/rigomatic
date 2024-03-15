@@ -13,6 +13,7 @@ from dcc.maya.json import mshapeparser
 from dcc.maya.decorators.undo import undo
 from . import qabstracttab
 from ..widgets import qcolorbutton
+from ...libs import modifyutils, ColorType
 
 import logging
 logging.basicConfig()
@@ -33,7 +34,7 @@ class Dimension(IntEnum):
     DEPTH = 2
 
 
-class Pivot(IntEnum):
+class PivotType(IntEnum):
     """
     Enum class of all available pivots.
     """
@@ -85,8 +86,6 @@ class QShapesTab(qabstracttab.QAbstractTab):
         self.shapeFilterItemModel = None
         self.createCustomPushButton = None
         self.createStarPushButton = None
-        self.createLocatorPushButton = None
-        self.createHelperPushButton = None
         self.edgeToCurvePushButton = None
         self.edgeToHelperPushButton = None
         self.degreeSpinBox = None
@@ -325,10 +324,10 @@ class QShapesTab(qabstracttab.QAbstractTab):
         """
         Returns the current pivot.
 
-        :rtype: Pivot
+        :rtype: PivotType
         """
 
-        return Pivot(self.pivotButtonGroup.checkedId())
+        return PivotType(self.pivotButtonGroup.checkedId())
 
     def dimensions(self):
         """
@@ -444,11 +443,13 @@ class QShapesTab(qabstracttab.QAbstractTab):
             QtWidgets.QColorDialog.setCustomColor(i, color)
 
     @undo(name='Create Custom Shape')
-    def createCustomShape(self, filename, parent=None):
+    def createCustomShape(self, filename, name='', colorRGB=None, parent=None):
         """
         Adds the specified custom shape to the supplied nodes.
 
         :type filename: str
+        :type name: str
+        :type colorRGB: Union[Tuple[float, float, float], None]
         :type parent: Union[mpynode.MPyNode, None]
         :rtype: None
         """
@@ -457,24 +458,27 @@ class QShapesTab(qabstracttab.QAbstractTab):
         #
         if parent is None:
 
-            parent = self.scene.createNode('transform')
+            name = name if self.scene.isNameUnique(name) else ''
+            parent = self.scene.createNode('transform', name=name)
 
         # Evaluate parent type
         #
         if parent.hasFn(om.MFn.kTransform):
 
-            parent.addShape(filename)
+            parent.addShape(filename, colorRGB=colorRGB)
 
         else:
 
             log.warning(f'Cannot add custom shape to "{parent.typeName}" node!')
 
     @undo(name='Create Star')
-    def createStar(self, numPoints=12, parent=None):
+    def createStar(self, name='', numPoints=12, colorRGB=None, parent=None):
         """
         Adds a star to the supplied nodes.
 
+        :type name: str
         :type numPoints: int
+        :type colorRGB: Union[Tuple[float, float, float], None]
         :type parent: Union[mpynode.MPyNode, None]
         :rtype: None
         """
@@ -483,67 +487,18 @@ class QShapesTab(qabstracttab.QAbstractTab):
         #
         if parent is None:
 
-            parent = self.scene.createNode('transform')
+            name = name if self.scene.isNameUnique(name) else ''
+            parent = self.scene.createNode('transform', name=name)
 
         # Evaluate parent type
         #
         if parent.hasFn(om.MFn.kTransform):
 
-            parent.addStar(numPoints=numPoints)
+            parent.addStar(numPoints=numPoints, colorRGB=colorRGB)
 
         else:
 
             log.warning(f'Cannot add star to "{parent.typeName}" node!')
-
-    @undo(name='Create Locator')
-    def createLocator(self, parent=None):
-        """
-        Adds a locator to the supplied nodes.
-
-        :type parent: Union[mpynode.MPyNode, None]
-        :rtype: None
-        """
-
-        # Evaluate parent
-        #
-        if parent is None:
-
-            parent = self.scene.createNode('transform')
-
-        # Evaluate parent type
-        #
-        if parent.hasFn(om.MFn.kTransform):
-
-            parent.addLocator()
-
-        else:
-
-            log.warning(f'Cannot add locator to "{parent.typeName}" node!')
-
-    @undo(name='Create Point Helper')
-    def createHelper(self, parent=None):
-        """
-        Adds a point helper to the supplied nodes.
-
-        :type parent: Union[mpynode.MPyNode, None]
-        :rtype: None
-        """
-
-        # Evaluate parent
-        #
-        if parent is None:
-
-            parent = self.scene.createNode('transform')
-
-        # Evaluate parent type
-        #
-        if parent.hasFn(om.MFn.kTransform):
-
-            parent.addPointHelper()
-
-        else:
-
-            log.warning(f'Cannot add point helper to "{parent.typeName}" node!')
 
     @undo(name='Convert Edge to Curve')
     def convertEdgeToCurve(self, mesh, edgeComponent, degree=1, offset=0.0):
@@ -720,24 +675,18 @@ class QShapesTab(qabstracttab.QAbstractTab):
 
         for (i, node) in enumerate(nodes):
 
-            # Check if this is a transform node
-            #
-            if not node.hasFn(om.MFn.kTransform):
-
-                continue
-
-            # Iterate through shapes
+            # Calculate color
             #
             weight = float(i) * factor
-
             red = (startColor.redF() * (1.0 - weight)) + (endColor.redF() * weight)
             green = (startColor.greenF() * (1.0 - weight)) + (endColor.greenF() * weight)
             blue = (startColor.blueF() * (1.0 - weight)) + (endColor.blueF() * weight)
 
-            for shape in node.iterShapes():
+            color = (red, green, blue)
 
-                shape.useObjectColor = 2
-                shape.wireColorRGB = (red, green, blue)
+            # Recolor node
+            #
+            modifyutils.recolorNodes(node, color=color, colorType=self.colorType())
 
     @undo(name='Rescale Shapes')
     def rescaleShapes(self, *nodes, percentage=0.0):
@@ -768,7 +717,7 @@ class QShapesTab(qabstracttab.QAbstractTab):
             worldMatrix = om.MMatrix.kIdentity
 
             pivot = self.pivot()
-            pivotMatrix = localMatrix if (pivot == Pivot.LOCAL) else parentMatrix if (pivot == Pivot.PARENT) else worldMatrix
+            pivotMatrix = localMatrix if (pivot == PivotType.LOCAL) else parentMatrix if (pivot == PivotType.PARENT) else worldMatrix
 
             # Compose scale matrix
             #
@@ -1070,6 +1019,7 @@ class QShapesTab(qabstracttab.QAbstractTab):
 
         # Check if selected nodes is enabled
         #
+        colorType = self.colorType()
         useSelectedNodes = self.useSelectedNodes()
 
         if useSelectedNodes:
@@ -1086,33 +1036,21 @@ class QShapesTab(qabstracttab.QAbstractTab):
             elif selectionCount == 1:
 
                 node = selection[0]
-                shapes = node.shapes()
-                numShapes = len(shapes)
-
-                if numShapes > 0:
-
-                    color = QtGui.QColor.fromRgbF(*shapes[0].wireColorRGB)
-                    self.startColorChanged.emit(color)
+                colorRGB = modifyutils.findWireframeColor(node, colorType=colorType)
+                color = QtGui.QColor.fromRgbF(*colorRGB)
+                self.startColorChanged.emit(color)
 
             else:
 
                 startNode = selection[0]
-                shapes = startNode.shapes()
-                numShapes = len(shapes)
-
-                if numShapes > 0:
-
-                    color = QtGui.QColor.fromRgbF(*shapes[0].wireColorRGB)
-                    self.startColorChanged.emit(color)
+                startColorRGB = modifyutils.findWireframeColor(startNode, colorType=colorType)
+                startColor = QtGui.QColor.fromRgbF(*startColorRGB)
+                self.startColorChanged.emit(startColor)
 
                 endNode = selection[-1]
-                shapes = endNode.shapes()
-                numShapes = len(shapes)
-
-                if numShapes > 0:
-
-                    color = QtGui.QColor.fromRgbF(*shapes[0].wireColorRGB)
-                    self.endColorChanged.emit(color)
+                endColorRGB = modifyutils.findWireframeColor(endNode, colorType=colorType)
+                endColor = QtGui.QColor.fromRgbF(*endColorRGB)
+                self.endColorChanged.emit(endColor)
 
         else:
 
@@ -1214,11 +1152,13 @@ class QShapesTab(qabstracttab.QAbstractTab):
         #
         row = rows[0]
         filename = self.shapeItemModel.item(row).text()
-
         modifiers = QtWidgets.QApplication.keyboardModifiers()
+
+        name = self.currentName()
+        colorRGB = self.currentColor()
         parent = self.selectedNode if (modifiers == QtCore.Qt.ShiftModifier) else None
 
-        self.createCustomShape(filename, parent=parent)
+        self.createCustomShape(filename, name=name, colorRGB=colorRGB, parent=parent)
 
     @QtCore.Slot()
     def on_createStarPushButton_clicked(self):
@@ -1243,39 +1183,16 @@ class QShapesTab(qabstracttab.QAbstractTab):
         if success:
 
             modifiers = QtWidgets.QApplication.keyboardModifiers()
+
+            name = self.currentName()
+            colorRGB = self.currentColor()
             parent = self.selectedNode if (modifiers == QtCore.Qt.ShiftModifier) else None
 
-            self.createStar(numPoints=numPoints, parent=parent)
+            self.createStar(name=name, numPoints=numPoints, colorRGB=colorRGB, parent=parent)
 
         else:
 
             log.info('Operation aborted...')
-
-    @QtCore.Slot()
-    def on_createLocatorPushButton_clicked(self):
-        """
-        Slot method for the `createLocatorPushButton` widget's `clicked` signal.
-
-        :rtype: None
-        """
-
-        modifiers = QtWidgets.QApplication.keyboardModifiers()
-        parent = self.selectedNode if (modifiers == QtCore.Qt.ShiftModifier) else None
-
-        self.createLocator(parent=parent)
-
-    @QtCore.Slot()
-    def on_createHelperPushButton_clicked(self):
-        """
-        Slot method for the `createHelperPushButton` widget's `clicked` signal.
-
-        :rtype: None
-        """
-
-        modifiers = QtWidgets.QApplication.keyboardModifiers()
-        parent = self.selectedNode if (modifiers == QtCore.Qt.ShiftModifier) else None
-
-        self.createHelper(parent=parent)
 
     @QtCore.Slot()
     def on_edgeToCurvePushButton_clicked(self):
@@ -1516,6 +1433,7 @@ class QShapesTab(qabstracttab.QAbstractTab):
 
         # Check if selected nodes require updating
         #
+        colorType = self.colorType()
         useSelectedNodes = self.useSelectedNodes()
 
         if useSelectedNodes:
@@ -1526,14 +1444,10 @@ class QShapesTab(qabstracttab.QAbstractTab):
 
                 return
 
-            # Evaluate shapes
+            # Recolor first node
             #
             node = self.selection[0]
-
-            for shape in node.iterShapes():
-
-                shape.useObjectColor = 2
-                shape.wireColorRGB = (color.redF(), color.greenF(), color.blueF())
+            modifyutils.recolorNodes(node, color=color, colorType=colorType)
 
             self.invalidateGradient()
 
@@ -1571,6 +1485,7 @@ class QShapesTab(qabstracttab.QAbstractTab):
 
         # Check if selected nodes require updating
         #
+        colorType = self.colorType()
         useSelectedNodes = self.useSelectedNodes()
 
         if useSelectedNodes:
@@ -1581,14 +1496,10 @@ class QShapesTab(qabstracttab.QAbstractTab):
 
                 return
 
-            # Evaluate shapes
+            # Recolor last node
             #
             node = self.selection[-1]
-
-            for shape in node.iterShapes():
-
-                shape.useObjectColor = 2
-                shape.wireColorRGB = (color.redF(), color.greenF(), color.blueF())
+            modifyutils.recolorNodes(node, color=color, colorType=colorType)
 
             self.invalidateGradient()
 
@@ -1627,23 +1538,23 @@ class QShapesTab(qabstracttab.QAbstractTab):
         # Check if selected node has any shapes
         #
         node = self.selection[0]
-        shapes = node.shapes()
-        numShapes = len(shapes)
+        hasShapes = node.numberOfShapesDirectlyBelow() > 0
 
-        if numShapes == 0:
+        if not hasShapes:
 
             log.warning('Selected control has no shapes to copy from!')
             return
 
         # Copy shape wire-color
         #
+        colorType = self.colorType()
+        colorRGB = modifyutils.findWireframeColor(node, colorType=colorType)
+        color = QtGui.QColor.fromRgbF(*colorRGB)
+
         sender = self.sender()
         index = self.swatchesButtonGroup.id(sender)
+        QtWidgets.QColorDialog.setCustomColor(index, color)
 
-        shape = shapes[0]
-        wireColor = QtGui.QColor.fromRgbF(*shape.wireColorRGB)
-
-        QtWidgets.QColorDialog.setCustomColor(index, wireColor)
         self.invalidateSwatches()
 
     @QtCore.Slot()

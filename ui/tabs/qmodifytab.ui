@@ -15,63 +15,13 @@
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
-    <widget class="QGroupBox" name="nameGroupBox">
-     <property name="sizePolicy">
-      <sizepolicy hsizetype="Expanding" vsizetype="Minimum">
-       <horstretch>0</horstretch>
-       <verstretch>0</verstretch>
-      </sizepolicy>
-     </property>
+    <widget class="QGroupBox" name="alignGroupBox">
      <property name="title">
-      <string>Name:</string>
+      <string>Align:</string>
      </property>
-     <layout class="QGridLayout" name="gridLayout_3">
-      <item row="3" column="1">
-       <widget class="QPushButton" name="helperPushButton">
-        <property name="minimumSize">
-         <size>
-          <width>0</width>
-          <height>24</height>
-         </size>
-        </property>
-        <property name="maximumSize">
-         <size>
-          <width>16777215</width>
-          <height>24</height>
-         </size>
-        </property>
-        <property name="whatsThis">
-         <string>pointHelper</string>
-        </property>
-        <property name="text">
-         <string>Helper</string>
-        </property>
-       </widget>
-      </item>
-      <item row="2" column="0">
-       <widget class="QPushButton" name="transformPushButton">
-        <property name="minimumSize">
-         <size>
-          <width>0</width>
-          <height>24</height>
-         </size>
-        </property>
-        <property name="maximumSize">
-         <size>
-          <width>16777215</width>
-          <height>24</height>
-         </size>
-        </property>
-        <property name="whatsThis">
-         <string>transform</string>
-        </property>
-        <property name="text">
-         <string>Transform</string>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="0" colspan="3">
-       <widget class="QWidget" name="nameWidget" native="true">
+     <layout class="QGridLayout" name="gridLayout_2">
+      <item row="0" column="2">
+       <widget class="QXyzWidget" name="scaleXYZWidget" native="true">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
           <horstretch>0</horstretch>
@@ -90,112 +40,20 @@
           <height>24</height>
          </size>
         </property>
-        <layout class="QHBoxLayout" name="horizontalLayout_2">
-         <property name="leftMargin">
-          <number>0</number>
-         </property>
-         <property name="topMargin">
-          <number>0</number>
-         </property>
-         <property name="rightMargin">
-          <number>0</number>
-         </property>
-         <property name="bottomMargin">
-          <number>0</number>
-         </property>
-         <item>
-          <widget class="QComboBox" name="namespaceComboBox">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="minimumSize">
-            <size>
-             <width>0</width>
-             <height>24</height>
-            </size>
-           </property>
-           <property name="maximumSize">
-            <size>
-             <width>16777215</width>
-             <height>24</height>
-            </size>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QLabel" name="namespaceLabel">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="minimumSize">
-            <size>
-             <width>4</width>
-             <height>0</height>
-            </size>
-           </property>
-           <property name="maximumSize">
-            <size>
-             <width>4</width>
-             <height>16777215</height>
-            </size>
-           </property>
-           <property name="text">
-            <string>:</string>
-           </property>
-           <property name="alignment">
-            <set>Qt::AlignCenter</set>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QLineEdit" name="nameLineEdit">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="placeholderText">
-            <string>Enter Name</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QColorButton" name="wireColorButton">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="minimumSize">
-            <size>
-             <width>24</width>
-             <height>24</height>
-            </size>
-           </property>
-           <property name="maximumSize">
-            <size>
-             <width>24</width>
-             <height>24</height>
-            </size>
-           </property>
-           <property name="text">
-            <string/>
-           </property>
-          </widget>
-         </item>
-        </layout>
+        <property name="styleSheet">
+         <string notr="true">QPushButton:hover:checked { background-color: green; }
+QPushButton:checked { background-color: darkgreen; border: none; }</string>
+        </property>
        </widget>
       </item>
-      <item row="2" column="1">
-       <widget class="QPushButton" name="jointPushButton">
+      <item row="0" column="0">
+       <widget class="QXyzWidget" name="translateXYZWidget" native="true">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
         <property name="minimumSize">
          <size>
           <width>0</width>
@@ -208,16 +66,20 @@
           <height>24</height>
          </size>
         </property>
-        <property name="whatsThis">
-         <string>joint</string>
-        </property>
-        <property name="text">
-         <string>Joint</string>
+        <property name="styleSheet">
+         <string notr="true">QPushButton:hover:checked { background-color: green; }
+QPushButton:checked { background-color: darkgreen; border: none; }</string>
         </property>
        </widget>
       </item>
-      <item row="3" column="0">
-       <widget class="QPushButton" name="locatorPushButton">
+      <item row="0" column="1">
+       <widget class="QXyzWidget" name="rotateXYZWidget" native="true">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
         <property name="minimumSize">
          <size>
           <width>0</width>
@@ -230,67 +92,33 @@
           <height>24</height>
          </size>
         </property>
-        <property name="whatsThis">
-         <string>locator</string>
-        </property>
-        <property name="text">
-         <string>Locator</string>
-        </property>
-       </widget>
-      </item>
-      <item row="2" column="2">
-       <widget class="QPushButton" name="ikHandlePushButton">
-        <property name="minimumSize">
-         <size>
-          <width>0</width>
-          <height>24</height>
-         </size>
-        </property>
-        <property name="maximumSize">
-         <size>
-          <width>16777215</width>
-          <height>24</height>
-         </size>
-        </property>
-        <property name="whatsThis">
-         <string>ikHandle</string>
-        </property>
-        <property name="text">
-         <string>IK-Handle</string>
-        </property>
-       </widget>
-      </item>
-      <item row="3" column="2">
-       <widget class="QPushButton" name="intermediatePushButton">
-        <property name="minimumSize">
-         <size>
-          <width>0</width>
-          <height>24</height>
-         </size>
-        </property>
-        <property name="maximumSize">
-         <size>
-          <width>16777215</width>
-          <height>24</height>
-         </size>
-        </property>
-        <property name="whatsThis">
-         <string>transform</string>
-        </property>
-        <property name="text">
-         <string>Intermediate</string>
+        <property name="styleSheet">
+         <string notr="true">QPushButton:hover:checked { background-color: green; }
+QPushButton:checked { background-color: darkgreen; border: none; }</string>
         </property>
        </widget>
       </item>
       <item row="1" column="0" colspan="3">
-       <widget class="QWidget" name="createDivider" native="true">
+       <widget class="QWidget" name="alignInteropWidget" native="true">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
           <horstretch>0</horstretch>
           <verstretch>0</verstretch>
          </sizepolicy>
         </property>
-        <layout class="QHBoxLayout" name="horizontalLayout_3">
+        <property name="minimumSize">
+         <size>
+          <width>0</width>
+          <height>24</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>16777215</width>
+          <height>24</height>
+         </size>
+        </property>
+        <layout class="QHBoxLayout" name="horizontalLayout_5">
          <property name="leftMargin">
           <number>0</number>
          </property>
@@ -304,7 +132,7 @@
           <number>0</number>
          </property>
          <item>
-          <widget class="QLabel" name="createLabel">
+          <widget class="QCheckBox" name="preserveShapesCheckBox">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
              <horstretch>0</horstretch>
@@ -312,20 +140,23 @@
             </sizepolicy>
            </property>
            <property name="text">
-            <string>Create:</string>
+            <string>Preserve Shapes</string>
            </property>
           </widget>
          </item>
          <item>
-          <widget class="Line" name="createLine">
+          <widget class="QPushButton" name="alignPushButton">
            <property name="sizePolicy">
-            <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+            <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
              <horstretch>0</horstretch>
              <verstretch>0</verstretch>
             </sizepolicy>
            </property>
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
+           <property name="toolTip">
+            <string>Copies the transform from the first selected node and pastes it onto the second node.</string>
+           </property>
+           <property name="text">
+            <string>Align</string>
            </property>
           </widget>
          </item>
@@ -626,158 +457,6 @@
     </widget>
    </item>
    <item>
-    <widget class="QGroupBox" name="alignGroupBox">
-     <property name="title">
-      <string>Align:</string>
-     </property>
-     <layout class="QGridLayout" name="gridLayout_2">
-      <item row="0" column="2">
-       <widget class="QXyzWidget" name="scaleXYZWidget" native="true">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
-        <property name="minimumSize">
-         <size>
-          <width>0</width>
-          <height>24</height>
-         </size>
-        </property>
-        <property name="maximumSize">
-         <size>
-          <width>16777215</width>
-          <height>24</height>
-         </size>
-        </property>
-        <property name="styleSheet">
-         <string notr="true">QPushButton:hover:checked { background-color: green; }
-QPushButton:checked { background-color: darkgreen; border: none; }</string>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="0">
-       <widget class="QXyzWidget" name="translateXYZWidget" native="true">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
-        <property name="minimumSize">
-         <size>
-          <width>0</width>
-          <height>24</height>
-         </size>
-        </property>
-        <property name="maximumSize">
-         <size>
-          <width>16777215</width>
-          <height>24</height>
-         </size>
-        </property>
-        <property name="styleSheet">
-         <string notr="true">QPushButton:hover:checked { background-color: green; }
-QPushButton:checked { background-color: darkgreen; border: none; }</string>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="1">
-       <widget class="QXyzWidget" name="rotateXYZWidget" native="true">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
-        <property name="minimumSize">
-         <size>
-          <width>0</width>
-          <height>24</height>
-         </size>
-        </property>
-        <property name="maximumSize">
-         <size>
-          <width>16777215</width>
-          <height>24</height>
-         </size>
-        </property>
-        <property name="styleSheet">
-         <string notr="true">QPushButton:hover:checked { background-color: green; }
-QPushButton:checked { background-color: darkgreen; border: none; }</string>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="0" colspan="3">
-       <widget class="QWidget" name="alignInteropWidget" native="true">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
-        <property name="minimumSize">
-         <size>
-          <width>0</width>
-          <height>24</height>
-         </size>
-        </property>
-        <property name="maximumSize">
-         <size>
-          <width>16777215</width>
-          <height>24</height>
-         </size>
-        </property>
-        <layout class="QHBoxLayout" name="horizontalLayout_5">
-         <property name="leftMargin">
-          <number>0</number>
-         </property>
-         <property name="topMargin">
-          <number>0</number>
-         </property>
-         <property name="rightMargin">
-          <number>0</number>
-         </property>
-         <property name="bottomMargin">
-          <number>0</number>
-         </property>
-         <item>
-          <widget class="QCheckBox" name="preserveShapesCheckBox">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="text">
-            <string>Preserve Shapes</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QPushButton" name="alignPushButton">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="toolTip">
-            <string>Copies the transform from the first selected node and pastes it onto the second node.</string>
-           </property>
-           <property name="text">
-            <string>Align</string>
-           </property>
-          </widget>
-         </item>
-        </layout>
-       </widget>
-      </item>
-     </layout>
-    </widget>
-   </item>
-   <item>
     <widget class="QGroupBox" name="attributesGroupBox">
      <property name="sizePolicy">
       <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
@@ -913,11 +592,6 @@ QPushButton:checked { background-color: firebrick; border: none; }</string>
    <extends>QWidget</extends>
    <header>dcc/ui/qxyzwidget.h</header>
    <container>1</container>
-  </customwidget>
-  <customwidget>
-   <class>QColorButton</class>
-   <extends>QPushButton</extends>
-   <header>rigomatic/ui/widgets/qcolorbutton.h</header>
   </customwidget>
  </customwidgets>
  <resources/>
