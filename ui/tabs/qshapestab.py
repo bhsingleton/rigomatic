@@ -466,6 +466,9 @@ class QShapesTab(qabstracttab.QAbstractTab):
         if parent.hasFn(om.MFn.kTransform):
 
             parent.addShape(filename, colorRGB=colorRGB)
+            self.renameShapes(parent)
+
+            parent.select(replace=True)
 
         else:
 
@@ -495,6 +498,9 @@ class QShapesTab(qabstracttab.QAbstractTab):
         if parent.hasFn(om.MFn.kTransform):
 
             parent.addStar(numPoints=numPoints, colorRGB=colorRGB)
+            self.renameShapes(parent)
+
+            parent.select(replace=True)
 
         else:
 
