@@ -361,6 +361,9 @@ class QRigomatic(quicwindow.QUicWindow):
 
         # Load user preferences
         #
+        color = settings.value('editor/color', defaultValue=QtGui.QColor(0, 0, 0))
+        self._currentColor = (color.redF(), color.greenF(), color.blue())
+
         self.setColorType(settings.value('editor/colorType', defaultValue=2, type=int))
         self.tabControl.setCurrentIndex(settings.value('editor/currentTabIndex', defaultValue=0, type=int))
 
@@ -384,6 +387,7 @@ class QRigomatic(quicwindow.QUicWindow):
 
         # Save user preferences
         #
+        settings.setValue('editor/color', QtGui.QColor.fromRgbF(*self._currentColor))
         settings.setValue('editor/colorType', int(self.colorType()))
         settings.setValue('editor/currentTabIndex', self.currentTabIndex())
 
