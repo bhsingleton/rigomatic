@@ -1,11 +1,8 @@
 from maya.api import OpenMaya as om
 from Qt import QtCore, QtWidgets, QtGui
-from dcc.python import stringutils
-from dcc.maya.libs import transformutils
 from dcc.maya.decorators.undo import undo
+from dcc.maya.models import qplugitemmodel, qplugitemfiltermodel, qplugstyleditemdelegate
 from . import qabstracttab
-from ..models import qplugitemmodel, qplugitemfiltermodel, qplugstyleditemdelegate
-from ...libs import kinematicutils
 
 import logging
 logging.basicConfig()
