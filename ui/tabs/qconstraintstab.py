@@ -243,7 +243,18 @@ class QConstraintsTab(qabstracttab.QAbstractTab):
         :rtype: mpynode.MPyNode
         """
 
-        return node.addConstraint(typeName, targets, **kwargs)
+        hasConstraint = node.hasConstraint(typeName)
+
+        if hasConstraint:
+            
+            constraint = node.findConstraint(typeName)
+            constraint.addTargets(targets)
+
+            return constraint
+
+        else:
+
+            return node.addConstraint(typeName, targets, **kwargs)
 
     @undo(name='Add Skin Constraint')
     def addSkinConstraint(self, node, target, **kwargs):
