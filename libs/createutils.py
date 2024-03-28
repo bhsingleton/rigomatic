@@ -18,7 +18,7 @@ def createNode(typeName, **kwargs):
     :type typeName: str
     :key name: str
     :key matrix: om.MMatrix
-    :key color = Tuple[float, float, float]
+    :key colorRGB = Tuple[float, float, float]
     :key locator: bool
     :key helper: bool
     :rtype: mpynode.MPyNode
@@ -27,9 +27,9 @@ def createNode(typeName, **kwargs):
     # Create node
     #
     scene = mpyscene.MPyScene()
-    name = kwargs.get('name', '')
-    cleanName = stringutils.slugify(name)
-    uniqueName = cleanName if scene.isNameUnique(cleanName) and not stringutils.isNullOrEmpty(name) else f'{typeName}1'
+
+    name = stringutils.slugify(kwargs.get('name', ''))
+    uniqueName = name if scene.isNameUnique(name) and not stringutils.isNullOrEmpty(name) else scene.makeNameUnique(f'{typeName}1')
 
     node = scene.createNode(typeName, name=uniqueName)
 
@@ -42,7 +42,7 @@ def createNode(typeName, **kwargs):
     #
     locator = kwargs.get('locator', False)
     helper = kwargs.get('helper', False)
-    colorRGB = kwargs.get('color', None)
+    colorRGB = kwargs.get('colorRGB', None)
 
     if locator:
 
@@ -61,6 +61,62 @@ def createNode(typeName, **kwargs):
     node.select(replace=True)
 
     return node
+
+
+@undo(name='Create Nodes from Selection')
+def createNodesFromSelection(typeName, selection, **kwargs):
+    """
+    Returns a sequence of nodes derived from the active selection.
+
+    :type typeName: str
+    :type selection: List[mpynode.MPyNode]
+    :key locator: bool
+    :key helper: bool
+    :key colorRGB = Tuple[float, float, float]
+    :rtype: mpynode.MPyNode
+    """
+
+    # Iterate through selection
+    #
+    scene = mpyscene.MPyScene()
+
+    locator = kwargs.get('locator', False)
+    helper = kwargs.get('helper', False)
+    colorRGB = kwargs.get('colorRGB', None)
+
+    selectionCount = len(selection)
+    nodes = [None] * selectionCount
+
+    for (i, selectedNode) in enumerate(selection):
+
+        # Create node and copy transform
+        #
+        name = scene.makeNameUnique(selectedNode.name())
+
+        node = scene.createNode(typeName, name=name)
+        node.copyTransform(selectedNode)
+
+        nodes[i] = node
+
+        # Check if shape is required
+        #
+        if locator:
+
+            node.addLocator(colorRGB=colorRGB)
+
+        elif helper:
+
+            node.addPointHelper(colorRGB=colorRGB)
+
+        else:
+
+            pass
+
+    # Update active selection
+    #
+    scene.setSelection(nodes, replace=True)
+
+    return nodes
 
 
 @undo(name='Add IK-Solver')

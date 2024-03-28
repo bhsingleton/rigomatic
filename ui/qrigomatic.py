@@ -98,7 +98,6 @@ class QRigomatic(quicwindow.QUicWindow):
         self._selection = []
         self._selectionCount = 0
         self._selectedNode = None
-        self._selectedPivot = om.MMatrix.kIdentity
         self._currentColor = (0.0, 0.0, 0.0)
         self._callbackIds = om.MCallbackIdArray()
 
@@ -181,16 +180,6 @@ class QRigomatic(quicwindow.QUicWindow):
         """
 
         return self._selectedNode
-
-    @property
-    def selectedPivot(self):
-        """
-        Getter method that returns the selection pivot.
-
-        :rtype: om.MMatrix
-        """
-
-        return self._selectedPivot
     # endregion
 
     # region Callbacks
@@ -509,6 +498,92 @@ class QRigomatic(quicwindow.QUicWindow):
 
                 continue
 
+    def wireColor(self):
+        """
+        Returns the current wire color.
+
+        :rtype: Tuple[float, float, float]
+        """
+
+        color = self.wireColorButton.color()
+        red, green, blue = color.redF(), color.greenF(), color.blueF()
+
+        return (red, green, blue)
+
+    def selectionPivot(self):
+        """
+        Returns the pivot of the active selection.
+
+        :rtype: om.MMatrix
+        """
+
+        # Evaluate active selection
+        #
+        componentSelection = self.scene.componentSelection(apiType=om.MFn.kDagNode)
+        hasSelection = len(componentSelection) > 0
+
+        if not hasSelection:
+
+            return om.MMatrix.kIdentity
+
+        # Calculate active pivot
+        #
+        boundingBox = om.MBoundingBox()
+
+        for (node, component) in componentSelection:
+
+            # Check if component is valid
+            #
+            hasComponent = not component.isNull()
+
+            if not hasComponent:
+
+                # Expand bounding-box using world position
+                #
+                worldMatrix = node.worldMatrix()
+                position = transformutils.breakMatrix(worldMatrix)[3]
+
+                boundingBox.expand(position)
+                continue
+
+            # Evaluate shape type
+            #
+            if node.hasFn(om.MFn.kMesh):
+
+                vertexComponent = node(component).convert(om.MFn.kMeshVertComponent)
+                elements = vertexComponent.elements()
+
+                parentMatrix = node.parentMatrix()
+
+                for element in elements:
+
+                    position = om.MPoint(node.getPoint(element)) * parentMatrix
+                    boundingBox.expand(position)
+
+            else:
+
+                elements = om.MFnSingleIndexedComponent(component).getElements()
+                controlPoints = node.controlPoints()
+
+                parentMatrix = node.parentMatrix()
+
+                for element in elements:
+
+                    position = om.MPoint(controlPoints[element]) * parentMatrix
+                    boundingBox.expand(position)
+
+        # Compose transform matrix
+        #
+        firstNode = componentSelection[0][0]
+        worldMatrix = firstNode.worldMatrix()
+
+        translateMatrix = transformutils.createTranslateMatrix(boundingBox.center)
+        rotateMatrix = transformutils.createRotationMatrix(worldMatrix)
+        scaleMatrix = transformutils.createScaleMatrix(worldMatrix)
+        matrix = scaleMatrix * rotateMatrix * translateMatrix
+
+        return matrix
+
     def currentTab(self):
         """
         Returns the tab widget that is currently open.
@@ -558,18 +633,6 @@ class QRigomatic(quicwindow.QUicWindow):
         """
 
         return list(self.iterTabs())
-
-    def wireColor(self):
-        """
-        Returns the current wire color.
-
-        :rtype: Tuple[float, float, float]
-        """
-
-        color = self.wireColorButton.color()
-        red, green, blue = color.redF(), color.greenF(), color.blueF()
-
-        return (red, green, blue)
 
     def invalidateName(self):
         """
@@ -649,82 +712,6 @@ class QRigomatic(quicwindow.QUicWindow):
             self.wireColorButton.setColor(color)
             self.wireColorButton.blockSignals(False)
 
-    def invalidatePivot(self):
-        """
-        Refreshes the internal pivot matrix.
-
-        :rtype: None
-        """
-
-        # Evaluate active selection
-        #
-        componentSelection = self.scene.componentSelection(apiType=om.MFn.kDagNode)
-        hasSelection = len(componentSelection) > 0
-
-        if not hasSelection:
-
-            self._selectedPivot = om.MMatrix.kIdentity
-            return
-
-        # Calculate active pivot
-        #
-        boundingBox = om.MBoundingBox()
-
-        for (node, component) in componentSelection:
-
-            # Check if component is valid
-            #
-            hasComponent = not component.isNull()
-
-            if hasComponent:
-
-                # Evaluate shape type
-                #
-                if node.hasFn(om.MFn.kMesh):
-
-                    vertexComponent = node(component).convert(om.MFn.kMeshVertComponent)
-                    elements = vertexComponent.elements()
-
-                    parentMatrix = node.parentMatrix()
-
-                    for element in elements:
-
-                        position = om.MPoint(node.getPoint(element)) * parentMatrix
-                        boundingBox.expand(position)
-
-                else:
-
-                    elements = om.MFnSingleIndexedComponent(component).getElements()
-                    controlPoints = node.controlPoints()
-
-                    parentMatrix = node.parentMatrix()
-
-                    for element in elements:
-
-                        position = om.MPoint(controlPoints[element]) * parentMatrix
-                        boundingBox.expand(position)
-
-            else:
-
-                # Expand bounding-box using world position
-                #
-                worldMatrix = node.worldMatrix()
-                position = transformutils.breakMatrix(worldMatrix)[3]
-
-                boundingBox.expand(position)
-
-        # Compose transform matrix
-        #
-        firstNode = componentSelection[0][0]
-        worldMatrix = firstNode.worldMatrix()
-
-        translateMatrix = transformutils.createTranslateMatrix(boundingBox.center)
-        rotateMatrix = transformutils.createRotationMatrix(worldMatrix)
-        scaleMatrix = transformutils.createScaleMatrix(worldMatrix)
-        matrix = scaleMatrix * rotateMatrix * translateMatrix
-
-        self._selectedPivot = matrix
-
     def invalidateSelection(self):
         """
         Refreshes the selection related widgets.
@@ -742,7 +729,6 @@ class QRigomatic(quicwindow.QUicWindow):
         #
         self.invalidateName()
         self.invalidateColor()
-        self.invalidatePivot()
     # endregion
 
     # region Slots
@@ -835,8 +821,25 @@ class QRigomatic(quicwindow.QUicWindow):
         :rtype: None
         """
 
-        name = self.nameLineEdit.text()
-        createutils.createNode('transform', name=name, matrix=self.selectedPivot)
+        # Evaluate keyboard modifiers
+        #
+        modifiers = QtWidgets.QApplication.keyboardModifiers()
+        averageSelection = modifiers == QtCore.Qt.AltModifier
+
+        if averageSelection:
+
+            # Create node from active pivot
+            #
+            name = self.nameLineEdit.text()
+            matrix = self.selectionPivot()
+
+            createutils.createNode('transform', name=name, matrix=matrix)
+
+        else:
+
+            # Create nodes from active selection
+            #
+            createutils.createNodesFromSelection('transform', self.selection)
 
     @QtCore.Slot()
     def on_jointPushButton_clicked(self):
@@ -846,8 +849,25 @@ class QRigomatic(quicwindow.QUicWindow):
         :rtype: None
         """
 
-        name = self.nameLineEdit.text()
-        createutils.createNode('joint', name=name, matrix=self.selectedPivot)
+        # Evaluate keyboard modifiers
+        #
+        modifiers = QtWidgets.QApplication.keyboardModifiers()
+        averageSelection = modifiers == QtCore.Qt.AltModifier
+
+        if averageSelection:
+
+            # Create node from active pivot
+            #
+            name = self.nameLineEdit.text()
+            matrix = self.selectionPivot()
+
+            createutils.createNode('joint', name=name, matrix=matrix)
+
+        else:
+
+            # Create nodes from active selection
+            #
+            createutils.createNodesFromSelection('joint', self.selection)
 
     @QtCore.Slot()
     def on_ikHandlePushButton_clicked(self):
@@ -876,8 +896,27 @@ class QRigomatic(quicwindow.QUicWindow):
         :rtype: None
         """
 
-        name = self.nameLineEdit.text()
-        createutils.createNode('transform', name=name, matrix=self.selectedPivot, color=self.wireColor(), locator=True)
+        # Evaluate keyboard modifiers
+        #
+        modifiers = QtWidgets.QApplication.keyboardModifiers()
+        averageSelection = modifiers == QtCore.Qt.AltModifier
+
+        colorRGB = self.wireColor()
+
+        if averageSelection:
+
+            # Create node from active pivot
+            #
+            name = self.nameLineEdit.text()
+            matrix = self.selectionPivot()
+
+            createutils.createNode('transform', name=name, matrix=matrix, locator=True, colorRGB=colorRGB)
+
+        else:
+
+            # Create nodes from active selection
+            #
+            createutils.createNodesFromSelection('transform', self.selection, locator=True, colorRGB=colorRGB)
 
     @QtCore.Slot()
     def on_helperPushButton_clicked(self):
@@ -887,8 +926,27 @@ class QRigomatic(quicwindow.QUicWindow):
         :rtype: None
         """
 
-        name = self.nameLineEdit.text()
-        createutils.createNode('transform', name=name, matrix=self.selectedPivot, color=self.wireColor(), helper=True)
+        # Evaluate keyboard modifiers
+        #
+        modifiers = QtWidgets.QApplication.keyboardModifiers()
+        averageSelection = modifiers == QtCore.Qt.AltModifier
+
+        colorRGB = self.wireColor()
+
+        if averageSelection:
+
+            # Create node from active pivot
+            #
+            name = self.nameLineEdit.text()
+            matrix = self.selectionPivot()
+
+            createutils.createNode('transform', name=name, matrix=matrix, helper=True, colorRGB=colorRGB)
+
+        else:
+
+            # Create nodes from active selection
+            #
+            createutils.createNodesFromSelection('transform', self.selection, helper=True, colorRGB=colorRGB)
 
     @QtCore.Slot()
     def on_intermediatePushButton_clicked(self):
