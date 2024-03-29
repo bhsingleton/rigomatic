@@ -250,6 +250,12 @@ class QConstraintsTab(qabstracttab.QAbstractTab):
             constraint = node.findConstraint(typeName)
             constraint.addTargets(targets)
 
+            maintainOffset = kwargs.get('maintainOffset', False)
+
+            if maintainOffset:
+
+                constraint.maintainOffset()
+
             return constraint
 
         else:

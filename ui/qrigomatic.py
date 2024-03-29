@@ -829,7 +829,7 @@ class QRigomatic(quicwindow.QUicWindow):
 
         if averageSelection:
 
-            # Create node from active selection pivot
+            # Create node from active pivot
             #
             createutils.createNode('transform', name=self.currentName(), matrix=self.selectionPivot())
 
@@ -861,7 +861,7 @@ class QRigomatic(quicwindow.QUicWindow):
 
         if averageSelection:
 
-            # Create node from active selection pivot
+            # Create node from active pivot
             #
             createutils.createNode('joint', name=self.currentName(), matrix=self.selectionPivot())
 
