@@ -13,7 +13,7 @@ from dcc.maya.json import mshapeparser
 from dcc.maya.decorators.undo import undo
 from . import qabstracttab
 from ..widgets import qcolorbutton
-from ...libs import modifyutils, ColorType
+from ...libs import createutils, modifyutils, ColorType
 
 import logging
 logging.basicConfig()
@@ -442,37 +442,85 @@ class QShapesTab(qabstracttab.QAbstractTab):
 
             QtWidgets.QColorDialog.setCustomColor(i, color)
 
-    @undo(name='Create Custom Shape')
-    def createCustomShape(self, filename, name='', colorRGB=None, parent=None):
+    @undo(name='Create Custom Shapes')
+    def createCustomShapes(self, filename, name='', colorRGB=None, selection=None):
         """
-        Adds the specified custom shape to the supplied nodes.
+        Creates the specified custom shape.
+        Any selections supplied will have their transforms copied from.
 
         :type filename: str
         :type name: str
         :type colorRGB: Union[Tuple[float, float, float], None]
-        :type parent: Union[mpynode.MPyNode, None]
+        :type selection: List[mpynode.MPyNode]
         :rtype: None
         """
 
-        # Evaluate parent
+        # Evaluate selection
         #
-        if parent is None:
+        if not stringutils.isNullOrEmpty(selection):
 
-            name = name if self.scene.isNameUnique(name) else ''
-            parent = self.scene.createNode('transform', name=name)
+            # Iterate through selection
+            #
+            nodes = []
 
-        # Evaluate parent type
-        #
-        if parent.hasFn(om.MFn.kTransform):
+            for selectedNode in selection:
 
-            parent.addShape(filename, colorRGB=colorRGB)
-            self.renameShapes(parent)
+                # Check if this is a transform node
+                #
+                if not selectedNode.hasFn(om.MFn.kTransform):
 
-            parent.select(replace=True)
+                    continue
+
+                # Create transform with shape
+                #
+                node = createutils.createNode('transform', name=name)
+                node.copyTransform(selectedNode)
+                node.addShape(filename, colorRGB=colorRGB)
+                node.renameShapes()
+
+                nodes.append(node)
+
+            # Update active selection
+            #
+            self.scene.setSelection(nodes, replace=True)
+
+            return nodes
 
         else:
 
-            log.warning(f'Cannot add custom shape to "{parent.typeName}" node!')
+            # Create transform with shape
+            #
+            node = createutils.createNode('transform', name=name)
+            node.addShape(filename, colorRGB=colorRGB)
+            node.renameShapes()
+
+            return node
+
+    @undo(name='Add Custom Shapes')
+    def addCustomShapes(self, filename, nodes, colorRGB=None):
+        """
+        Adds the specified custom shape to the supplied nodes.
+
+        :type filename: str
+        :type nodes: List[mpynode.MPyNode]
+        :type colorRGB: Union[Tuple[float, float, float], None]
+        :rtype: None
+        """
+
+        # Iterate through nodes
+        #
+        for node in nodes:
+
+            # Check if this is a transform node
+            #
+            if not node.hasFn(om.MFn.kTransform):
+
+                continue
+
+            # Add custom shape to node
+            #
+            node.addShape(filename, colorRGB=colorRGB)
+            node.renameShapes()
 
     @undo(name='Create Star')
     def createStar(self, name='', numPoints=12, colorRGB=None, parent=None):
@@ -609,35 +657,9 @@ class QShapesTab(qabstracttab.QAbstractTab):
 
                 continue
 
-            # Evaluate number of shapes
+            # Rename shapes under transform
             #
-            nodeName = node.name()
-
-            shapes = node.shapes()
-            numShapes = len(shapes)
-
-            if numShapes == 0:
-
-                continue
-
-            elif numShapes == 1:
-
-                shape = shapes[0]
-                originalName = shape.name()
-                newName = f'{nodeName}Shape'
-
-                log.info(f'Renaming {originalName} > {newName}')
-                shape.setName(newName)
-
-            else:
-
-                for (i, shape) in enumerate(shapes, start=1):
-
-                    originalName = shape.name()
-                    newName = f'{nodeName}Shape{i}'
-
-                    log.info(f'Renaming {originalName} > {newName}')
-                    shape.setName(newName)
+            node.renameShapes()
 
     @undo(name='Remove Shapes')
     def removeShapes(self, *nodes):
@@ -1158,13 +1180,16 @@ class QShapesTab(qabstracttab.QAbstractTab):
         #
         row = rows[0]
         filename = self.shapeItemModel.item(row).text()
+
         modifiers = QtWidgets.QApplication.keyboardModifiers()
 
-        name = self.currentName()
-        colorRGB = self.currentColor()
-        parent = self.selectedNode if (modifiers == QtCore.Qt.ShiftModifier) else None
+        if modifiers == QtCore.Qt.ShiftModifier:
 
-        self.createCustomShape(filename, name=name, colorRGB=colorRGB, parent=parent)
+            self.addCustomShapes(filename, self.selection, colorRGB=self.currentColor())
+
+        else:
+
+            self.createCustomShapes(filename, name=self.currentName(), colorRGB=self.currentColor(), selection=self.selection)
 
     @QtCore.Slot()
     def on_createStarPushButton_clicked(self):
