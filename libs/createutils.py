@@ -84,10 +84,18 @@ def createNodesFromSelection(typeName, selection, **kwargs):
     helper = kwargs.get('helper', False)
     colorRGB = kwargs.get('colorRGB', None)
 
-    selectionCount = len(selection)
-    nodes = [None] * selectionCount
+    nodes = []
 
     for (i, selectedNode) in enumerate(selection):
+
+        # Evaluate selected node type
+        #
+        isTransform = selectedNode.hasFn(om.MFn.kTransform)
+        isConstraint = selectedNode.hasFn(om.MFn.kConstraint, om.MFn.kPluginConstraintNode)
+
+        if not isTransform or isConstraint:
+
+            continue
 
         # Create node and copy transform
         #
@@ -96,7 +104,7 @@ def createNodesFromSelection(typeName, selection, **kwargs):
         node = scene.createNode(typeName, name=name)
         node.copyTransform(selectedNode)
 
-        nodes[i] = node
+        nodes.append(node)
 
         # Check if shape is required
         #

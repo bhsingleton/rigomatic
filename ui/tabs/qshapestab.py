@@ -465,9 +465,12 @@ class QShapesTab(qabstracttab.QAbstractTab):
 
             for selectedNode in selection:
 
-                # Check if this is a transform node
+                # Evaluate selected node type
                 #
-                if not selectedNode.hasFn(om.MFn.kTransform):
+                isTransform = selectedNode.hasFn(om.MFn.kTransform)
+                isConstraint = selectedNode.hasFn(om.MFn.kConstraint, om.MFn.kPluginConstraintNode)
+
+                if not isTransform or isConstraint:
 
                     continue
 
