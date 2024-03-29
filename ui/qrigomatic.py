@@ -825,21 +825,25 @@ class QRigomatic(quicwindow.QUicWindow):
         #
         modifiers = QtWidgets.QApplication.keyboardModifiers()
         averageSelection = modifiers == QtCore.Qt.AltModifier
+        hasSelection = self.selectionCount > 0
 
         if averageSelection:
 
-            # Create node from active pivot
+            # Create node from active selection pivot
             #
-            name = self.nameLineEdit.text()
-            matrix = self.selectionPivot()
+            createutils.createNode('transform', name=self.currentName(), matrix=self.selectionPivot())
 
-            createutils.createNode('transform', name=name, matrix=matrix)
-
-        else:
+        elif hasSelection:
 
             # Create nodes from active selection
             #
             createutils.createNodesFromSelection('transform', self.selection)
+
+        else:
+
+            # Create node at origin
+            #
+            createutils.createNode('transform', name=self.currentName())
 
     @QtCore.Slot()
     def on_jointPushButton_clicked(self):
@@ -853,21 +857,25 @@ class QRigomatic(quicwindow.QUicWindow):
         #
         modifiers = QtWidgets.QApplication.keyboardModifiers()
         averageSelection = modifiers == QtCore.Qt.AltModifier
+        hasSelection = self.selectionCount > 0
 
         if averageSelection:
 
-            # Create node from active pivot
+            # Create node from active selection pivot
             #
-            name = self.nameLineEdit.text()
-            matrix = self.selectionPivot()
+            createutils.createNode('joint', name=self.currentName(), matrix=self.selectionPivot())
 
-            createutils.createNode('joint', name=name, matrix=matrix)
-
-        else:
+        elif hasSelection:
 
             # Create nodes from active selection
             #
             createutils.createNodesFromSelection('joint', self.selection)
+
+        else:
+
+            # Create node at origin
+            #
+            createutils.createNode('joint', name=self.currentName())
 
     @QtCore.Slot()
     def on_ikHandlePushButton_clicked(self):
@@ -900,23 +908,25 @@ class QRigomatic(quicwindow.QUicWindow):
         #
         modifiers = QtWidgets.QApplication.keyboardModifiers()
         averageSelection = modifiers == QtCore.Qt.AltModifier
-
-        colorRGB = self.wireColor()
+        hasSelection = self.selectionCount > 0
 
         if averageSelection:
 
             # Create node from active pivot
             #
-            name = self.nameLineEdit.text()
-            matrix = self.selectionPivot()
+            createutils.createNode('transform', name=self.currentName(), matrix=self.selectionPivot(), locator=True, colorRGB=self.wireColor())
 
-            createutils.createNode('transform', name=name, matrix=matrix, locator=True, colorRGB=colorRGB)
-
-        else:
+        elif hasSelection:
 
             # Create nodes from active selection
             #
-            createutils.createNodesFromSelection('transform', self.selection, locator=True, colorRGB=colorRGB)
+            createutils.createNodesFromSelection('transform', self.selection, locator=True, colorRGB=self.wireColor())
+
+        else:
+
+            # Create node at origin
+            #
+            createutils.createNode('transform', name=self.currentName(), locator=True, colorRGB=self.wireColor())
 
     @QtCore.Slot()
     def on_helperPushButton_clicked(self):
@@ -930,23 +940,25 @@ class QRigomatic(quicwindow.QUicWindow):
         #
         modifiers = QtWidgets.QApplication.keyboardModifiers()
         averageSelection = modifiers == QtCore.Qt.AltModifier
-
-        colorRGB = self.wireColor()
+        hasSelection = self.selectionCount > 0
 
         if averageSelection:
 
             # Create node from active pivot
             #
-            name = self.nameLineEdit.text()
-            matrix = self.selectionPivot()
+            createutils.createNode('transform', name=self.currentName(), matrix=self.selectionPivot(), helper=True, colorRGB=self.wireColor())
 
-            createutils.createNode('transform', name=name, matrix=matrix, helper=True, colorRGB=colorRGB)
-
-        else:
+        elif hasSelection:
 
             # Create nodes from active selection
             #
-            createutils.createNodesFromSelection('transform', self.selection, helper=True, colorRGB=colorRGB)
+            createutils.createNodesFromSelection('transform', self.selection, helper=True, colorRGB=self.wireColor())
+
+        else:
+
+            # Create node at origin
+            #
+            createutils.createNode('transform', name=self.currentName(), helper=True, colorRGB=self.wireColor())
 
     @QtCore.Slot()
     def on_intermediatePushButton_clicked(self):
