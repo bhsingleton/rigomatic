@@ -120,10 +120,17 @@ def applySingleChainSolver(startJoint, endJoint):
     # Create IK nodes
     #
     scene = mpyscene.MPyScene()
+
     ikHandle = scene.createNode('ikHandle')
     effector = applyEffector(endJoint)
 
-    ikHandle.copyTransform(endJoint)
+    # Update IK-handle transform
+    #
+    startMatrix = startJoint.worldMatrix()
+    endMatrix = endJoint.worldMatrix()
+    matrix = transformutils.createRotationMatrix(startMatrix) * transformutils.createTranslateMatrix(endMatrix)
+
+    ikHandle.setWorldMatrix(matrix)
 
     # Enable stickiness
     #
@@ -154,10 +161,11 @@ def applyRotationPlaneSolver(startJoint, endJoint):
     # Create IK nodes
     #
     scene = mpyscene.MPyScene()
-    ikHandle = scene.createNode('ikHandle')
-    effector = applyEffector(endJoint)
 
+    ikHandle = scene.createNode('ikHandle')
     ikHandle.copyTransform(endJoint)
+
+    effector = applyEffector(endJoint)
 
     # Connect IK attributes
     #
@@ -184,10 +192,11 @@ def applySpringSolver(startJoint, endJoint):
     # Create IK nodes
     #
     scene = mpyscene.MPyScene()
-    ikHandle = scene.createNode('ikHandle')
-    effector = applyEffector(endJoint)
 
+    ikHandle = scene.createNode('ikHandle')
     ikHandle.copyTransform(endJoint)
+
+    effector = applyEffector(endJoint)
 
     # Connect IK attributes
     #
@@ -216,6 +225,7 @@ def applySplineSolver(startJoint, endJoint, curve):
     # Create IK nodes
     #
     scene = mpyscene.MPyScene()
+
     ikHandle = scene.createNode('ikHandle')
     ikHandle.copyTransform(endJoint)
 
