@@ -139,7 +139,7 @@ def applySingleChainSolver(startJoint, endJoint):
     # Connect IK attributes
     #
     startJoint.connectPlugs('message', ikHandle['startJoint'])
-    effector.connectPlugs('handlePath[0]', ikHandle['endEffector'])
+    effector.connectPlugs(f'handlePath[{effector.instanceNumber()}]', ikHandle['endEffector'])
 
     # Get rotation plane solver
     #
