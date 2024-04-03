@@ -248,13 +248,7 @@ class QConstraintsTab(qabstracttab.QAbstractTab):
         if hasConstraint:
             
             constraint = node.findConstraint(typeName)
-            constraint.addTargets(targets)
-
-            maintainOffset = kwargs.get('maintainOffset', False)
-
-            if maintainOffset:
-
-                constraint.maintainOffset()
+            constraint.addTargets(targets, **kwargs)
 
             return constraint
 
@@ -789,7 +783,7 @@ class QConstraintsTab(qabstracttab.QAbstractTab):
         currentTargets = [target.targetObject() for target in self.targets]
         targets = [node for node in self.selection if node not in currentTargets and node is not self.currentNode]
 
-        self.currentConstraint.addTargets(targets)
+        self.currentConstraint.addTargets(targets, maintainOffset=self.maintainOffset())
         self.invalidateTargets()
 
     @QtCore.Slot()
@@ -811,17 +805,21 @@ class QConstraintsTab(qabstracttab.QAbstractTab):
         rows = list({index.row() for index in self.targetTableView.selectedIndexes()})
         numRows = len(rows)
 
-        if numRows == 1:
-
-            row = rows[0]
-            index = int(self.targets[row].index)
-
-            self.currentConstraint.removeTarget(index)
-            self.invalidateTargets()
-
-        else:
+        if numRows == 0:
 
             log.warning('No target selected to remove!')
+            return
+
+        # Remove targets
+        #
+        maintainOffset = self.maintainOffset()
+
+        for row in reversed(rows):
+
+            index = int(self.targets[row].index)
+            self.currentConstraint.removeTarget(index, maintainOffset=maintainOffset)
+
+        self.invalidateTargets()
 
     @QtCore.Slot()
     def on_renameTargetPushButton_clicked(self):
