@@ -548,7 +548,7 @@ class QShapesTab(qabstracttab.QAbstractTab):
         #
         if parent.hasFn(om.MFn.kTransform):
 
-            parent.addStar(numPoints=numPoints, colorRGB=colorRGB)
+            parent.addStar(10.0, numPoints=numPoints, colorRGB=colorRGB)
             self.renameShapes(parent)
 
             parent.select(replace=True)
