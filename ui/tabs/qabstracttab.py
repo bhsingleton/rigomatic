@@ -98,14 +98,14 @@ class QAbstractTab(quicwidget.QUicWidget):
 
         return self.window().currentColor()
 
-    def colorType(self):
+    def colorMode(self):
         """
-        Returns the current color type.
+        Returns the current color mode.
 
-        :rtype: ColorType
+        :rtype: ColorMode
         """
 
-        return self.window().colorType()
+        return self.window().colorMode()
 
     def invalidate(self, reason=None):
         """

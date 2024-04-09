@@ -1,9 +1,9 @@
 from enum import IntEnum
 
 
-class ColorType(IntEnum):
+class ColorMode(IntEnum):
     """
-    Enum class of all available color types.
+    Enum class of all available colour modes.
     """
 
     NONE = -1

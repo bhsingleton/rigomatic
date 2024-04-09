@@ -1,7 +1,7 @@
 from maya.api import OpenMaya as om
 from mpy import mpyscene, mpynode
 from dcc.maya.decorators.undo import undo
-from . import ColorType
+from . import ColorMode
 
 import logging
 logging.basicConfig()
@@ -46,12 +46,12 @@ def renamespaceNodes(*nodes, namespace=''):
         node.setNamespace(namespace)
 
 
-def findWireframeColor(node, colorType=ColorType.NONE):
+def findWireframeColor(node, colorMode=ColorMode.NONE):
     """
     Returns the wireframe color from the supplied node.
 
     :type node:
-    :type colorType: ColorType
+    :type colorMode: ColorMode
     :rtype: Tuple[float, float, float]
     """
 
@@ -74,13 +74,13 @@ def findWireframeColor(node, colorType=ColorType.NONE):
 
     # Evaluate color type
     #
-    if colorType == ColorType.WIRE_COLOR_RGB:
+    if colorMode == ColorMode.WIRE_COLOR_RGB:
 
         return shape.wireColorRGB
 
-    elif colorType == ColorType.OVERRIDE_COLOR_RGB:
+    elif colorMode == ColorMode.OVERRIDE_COLOR_RGB:
 
-        return shape.overrideColorRGB
+        return shape.overrideColorRGB if shape.overrideEnabled else shape.wireColorRGB
 
     else:
 
@@ -89,13 +89,13 @@ def findWireframeColor(node, colorType=ColorType.NONE):
 
 
 @undo(name='Recolor Node')
-def recolorNodes(*nodes, color=(0.0, 0.0, 0.0), colorType=ColorType.NONE):
+def recolorNodes(*nodes, color=(0.0, 0.0, 0.0), colorMode=ColorMode.NONE):
     """
     Recolors the supplied node to the specified color.
 
     :type nodes: Union[mpynode.MPyNode, List[mpynode.MPyNode]]
     :type color: Tuple[float, float, float]
-    :type colorType: ColorType
+    :type colorMode: ColorMode
     :rtype: None
     """
 
@@ -124,12 +124,12 @@ def recolorNodes(*nodes, color=(0.0, 0.0, 0.0), colorType=ColorType.NONE):
 
             # Evaluate color type
             #
-            if colorType == ColorType.WIRE_COLOR_RGB:
+            if colorMode == ColorMode.WIRE_COLOR_RGB:
 
                 shape.useObjectColor = 2
                 shape.wireColorRGB = color
 
-            elif colorType == ColorType.OVERRIDE_COLOR_RGB:
+            elif colorMode == ColorMode.OVERRIDE_COLOR_RGB:
 
                 shape.overrideEnabled = True
                 shape.overrideRGBColors = True

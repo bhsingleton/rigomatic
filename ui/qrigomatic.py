@@ -7,7 +7,7 @@ from Qt import QtCore, QtWidgets, QtGui, QtCompat
 from dcc.ui import quicwindow
 from dcc.maya.libs import transformutils
 from . import InvalidateReason
-from ..libs import createutils, modifyutils, ColorType
+from ..libs import createutils, modifyutils, ColorMode
 
 import logging
 logging.basicConfig()
@@ -107,8 +107,8 @@ class QRigomatic(quicwindow.QUicWindow):
         self.settingsMenu = None
         self.nameConfigurationAction = None
         self.changeNameConfigurationAction = None
-        self.colorTypeActionGroup = None
-        self.colorTypeSection = None
+        self.colorModeActionGroup = None
+        self.colorModeSection = None
         self.wireColorAction = None
         self.overrideColorAction = None
         self.helpMenu = None
@@ -285,9 +285,9 @@ class QRigomatic(quicwindow.QUicWindow):
         self.changeNameConfigurationAction = QtWidgets.QAction('Change Name Configuration', parent=self.settingsMenu)
         self.changeNameConfigurationAction.setObjectName('changeNameConfigurationAction')
 
-        self.colorTypeSection = QtWidgets.QAction('Color Type:', parent=self.settingsMenu)
-        self.colorTypeSection.setObjectName('colorSection')
-        self.colorTypeSection.setSeparator(True)
+        self.colorModeSection = QtWidgets.QAction('Color Mode:', parent=self.settingsMenu)
+        self.colorModeSection.setObjectName('colorSection')
+        self.colorModeSection.setSeparator(True)
 
         self.wireColorAction = QtWidgets.QAction('Wire Color', parent=self.settingsMenu)
         self.wireColorAction.setObjectName('wireColorAction')
@@ -300,17 +300,17 @@ class QRigomatic(quicwindow.QUicWindow):
         self.overrideColorAction.setCheckable(True)
         self.overrideColorAction.setWhatsThis('OVERRIDE_COLOR_RGB')
 
-        self.colorTypeActionGroup = QtWidgets.QActionGroup(self.settingsMenu)
-        self.colorTypeActionGroup.setObjectName('colorActionGroup')
-        self.colorTypeActionGroup.setExclusive(True)
-        self.colorTypeActionGroup.addAction(self.wireColorAction)
-        self.colorTypeActionGroup.addAction(self.overrideColorAction)
+        self.colorModeActionGroup = QtWidgets.QActionGroup(self.settingsMenu)
+        self.colorModeActionGroup.setObjectName('colorModeActionGroup')
+        self.colorModeActionGroup.setExclusive(True)
+        self.colorModeActionGroup.addAction(self.wireColorAction)
+        self.colorModeActionGroup.addAction(self.overrideColorAction)
 
         self.settingsMenu.addActions(
             [
                 self.nameConfigurationAction,
                 self.changeNameConfigurationAction,
-                self.colorTypeSection,
+                self.colorModeSection,
                 self.wireColorAction,
                 self.overrideColorAction
             ]
@@ -353,7 +353,7 @@ class QRigomatic(quicwindow.QUicWindow):
         color = settings.value('editor/color', defaultValue=QtGui.QColor(0, 0, 0))
         self._currentColor = (color.redF(), color.greenF(), color.blue())
 
-        self.setColorType(settings.value('editor/colorType', defaultValue=2, type=int))
+        self.setColorMode(settings.value('editor/colorMode', defaultValue=2, type=int))
         self.tabControl.setCurrentIndex(settings.value('editor/currentTabIndex', defaultValue=0, type=int))
 
         # Load tab settings
@@ -377,7 +377,7 @@ class QRigomatic(quicwindow.QUicWindow):
         # Save user preferences
         #
         settings.setValue('editor/color', QtGui.QColor.fromRgbF(*self._currentColor))
-        settings.setValue('editor/colorType', int(self.colorType()))
+        settings.setValue('editor/colorMode', int(self.colorMode()))
         settings.setValue('editor/currentTabIndex', self.currentTabIndex())
 
         # Save tab settings
@@ -467,29 +467,29 @@ class QRigomatic(quicwindow.QUicWindow):
         color = self.wireColorButton.color()
         return color.redF(), color.greenF(), color.blueF()
 
-    def colorType(self):
+    def colorMode(self):
         """
         Returns the current color type.
 
-        :rtype: ColorType
+        :rtype: ColorMode
         """
 
-        return ColorType[self.colorTypeActionGroup.checkedAction().whatsThis()]
+        return ColorMode[self.colorModeActionGroup.checkedAction().whatsThis()]
 
-    def setColorType(self, colorType):
+    def setColorMode(self, colorMode):
         """
         Updates the current color type.
 
-        :type colorType: Union[ColorType, int]
+        :type colorMode: Union[ColorMode, int]
         :rtype: None
         """
 
-        colorType = ColorType(colorType)
-        colorTypeName = colorType.name
+        colorMode = ColorMode(colorMode)
+        colorModeName = colorMode.name
 
-        for action in self.colorTypeActionGroup.actions():
+        for action in self.colorModeActionGroup.actions():
 
-            if action.whatsThis() == colorTypeName:
+            if action.whatsThis() == colorModeName:
 
                 action.setChecked(True)
                 break
@@ -694,8 +694,8 @@ class QRigomatic(quicwindow.QUicWindow):
             #
             node = selection[0]
 
-            colorType = self.colorType()
-            colorRGB = modifyutils.findWireframeColor(node, colorType=colorType)
+            colorMode = self.colorMode()
+            colorRGB = modifyutils.findWireframeColor(node, colorMode=colorMode)
             color = QtGui.QColor.fromRgbF(*colorRGB)
 
             self.wireColorButton.blockSignals(True)
@@ -805,9 +805,9 @@ class QRigomatic(quicwindow.QUicWindow):
         if self.selectionCount > 0:
 
             colorRGB = (color.redF(), color.greenF(), color.blueF())
-            colorType = self.colorType()
+            colorMode = self.colorMode()
 
-            modifyutils.recolorNodes(*self.selection, color=colorRGB, colorType=colorType)
+            modifyutils.recolorNodes(*self.selection, color=colorRGB, colorMode=colorMode)
 
         else:
 

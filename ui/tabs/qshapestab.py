@@ -13,7 +13,7 @@ from dcc.maya.json import mshapeparser
 from dcc.maya.decorators.undo import undo
 from . import qabstracttab
 from ..widgets import qcolorbutton
-from ...libs import createutils, modifyutils, ColorType
+from ...libs import createutils, modifyutils, ColorMode
 
 import logging
 logging.basicConfig()
@@ -717,7 +717,7 @@ class QShapesTab(qabstracttab.QAbstractTab):
 
             # Recolor node
             #
-            modifyutils.recolorNodes(node, color=color, colorType=self.colorType())
+            modifyutils.recolorNodes(node, color=color, colorMode=self.colorMode())
 
     @undo(name='Rescale Shapes')
     def rescaleShapes(self, *nodes, percentage=0.0):
@@ -1050,7 +1050,7 @@ class QShapesTab(qabstracttab.QAbstractTab):
 
         # Check if selected nodes is enabled
         #
-        colorType = self.colorType()
+        colorMode = self.colorMode()
         useSelectedNodes = self.useSelectedNodes()
 
         if useSelectedNodes:
@@ -1067,19 +1067,19 @@ class QShapesTab(qabstracttab.QAbstractTab):
             elif selectionCount == 1:
 
                 node = selection[0]
-                colorRGB = modifyutils.findWireframeColor(node, colorType=colorType)
+                colorRGB = modifyutils.findWireframeColor(node, colorMode=colorMode)
                 color = QtGui.QColor.fromRgbF(*colorRGB)
                 self.startColorChanged.emit(color)
 
             else:
 
                 startNode = selection[0]
-                startColorRGB = modifyutils.findWireframeColor(startNode, colorType=colorType)
+                startColorRGB = modifyutils.findWireframeColor(startNode, colorMode=colorMode)
                 startColor = QtGui.QColor.fromRgbF(*startColorRGB)
                 self.startColorChanged.emit(startColor)
 
                 endNode = selection[-1]
-                endColorRGB = modifyutils.findWireframeColor(endNode, colorType=colorType)
+                endColorRGB = modifyutils.findWireframeColor(endNode, colorMode=colorMode)
                 endColor = QtGui.QColor.fromRgbF(*endColorRGB)
                 self.endColorChanged.emit(endColor)
 
@@ -1467,7 +1467,7 @@ class QShapesTab(qabstracttab.QAbstractTab):
 
         # Check if selected nodes require updating
         #
-        colorType = self.colorType()
+        colorMode = self.colorMode()
         useSelectedNodes = self.useSelectedNodes()
 
         if useSelectedNodes:
@@ -1481,7 +1481,7 @@ class QShapesTab(qabstracttab.QAbstractTab):
             # Recolor first node
             #
             node = self.selection[0]
-            modifyutils.recolorNodes(node, color=color, colorType=colorType)
+            modifyutils.recolorNodes(node, color=color, colorMode=colorMode)
 
             self.invalidateGradient()
 
@@ -1519,7 +1519,7 @@ class QShapesTab(qabstracttab.QAbstractTab):
 
         # Check if selected nodes require updating
         #
-        colorType = self.colorType()
+        colorMode = self.colorMode()
         useSelectedNodes = self.useSelectedNodes()
 
         if useSelectedNodes:
@@ -1533,7 +1533,7 @@ class QShapesTab(qabstracttab.QAbstractTab):
             # Recolor last node
             #
             node = self.selection[-1]
-            modifyutils.recolorNodes(node, color=color, colorType=colorType)
+            modifyutils.recolorNodes(node, color=color, colorMode=colorMode)
 
             self.invalidateGradient()
 
@@ -1569,20 +1569,12 @@ class QShapesTab(qabstracttab.QAbstractTab):
             log.warning('No controls selected to copy from!')
             return
 
-        # Check if selected node has any shapes
+        # Copy wire-color from selection
         #
         node = self.selection[0]
-        hasShapes = node.numberOfShapesDirectlyBelow() > 0
 
-        if not hasShapes:
-
-            log.warning('Selected control has no shapes to copy from!')
-            return
-
-        # Copy shape wire-color
-        #
-        colorType = self.colorType()
-        colorRGB = modifyutils.findWireframeColor(node, colorType=colorType)
+        colorMode = self.colorMode()
+        colorRGB = modifyutils.findWireframeColor(node, colorMode=colorMode)
         color = QtGui.QColor.fromRgbF(*colorRGB)
 
         sender = self.sender()
