@@ -399,7 +399,8 @@ class QRenameTab(qabstracttab.QAbstractTab):
 
             for (i, name) in enumerate(self._after):
 
-                searchPattern = f'(^.*)({search.replace("*", ".+")})(.*$)'
+                escapedPattern = ''.join([f'\\{char}' if char in '(){}.,+|!-' else char for char in search])
+                searchPattern = f'(^.*)({escapedPattern.replace("*", ".+")})(.*$)'
                 replacePattern = f'\\1{replace}\\3'
 
                 self._after[i] = re.sub(searchPattern, replacePattern, name)
