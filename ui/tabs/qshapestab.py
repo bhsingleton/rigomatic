@@ -1642,11 +1642,19 @@ class QShapesTab(qabstracttab.QAbstractTab):
 
         # Evaluate active selection
         #
-        if self.selectionCount == 2:
+        if not (self.selectionCount >= 2):
 
-            self.parentShapes(self.selection[0], self.selection[1], preservePosition=self.preservePosition())
+            log.warning(f'Re-parenting shapes expects at least 2 controls ({self.selectionCount} selected)!')
+            return
 
-        else:
+        # Re-parent shapes
+        #
+        sources = self.selection[:-1]
+        target = self.selection[-1]
 
-            log.warning(f'Re-parenting shapes expects 2 controls ({self.selectionCount} selected)!')
+        preservePosition = self.preservePosition()
+
+        for source in sources:
+
+            self.parentShapes(source, target, preservePosition=preservePosition)
     # endregion
