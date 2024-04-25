@@ -4,7 +4,7 @@ from maya import cmds as mc
 from maya.api import OpenMaya as om
 from mpy import mpyscene
 from Qt import QtCore, QtWidgets, QtGui, QtCompat
-from dcc.ui import quicwindow
+from dcc.ui import quicwindow, qsignalblocker
 from dcc.maya.libs import transformutils
 from . import InvalidateReason
 from ..libs import createutils, modifyutils, ColorMode
@@ -653,13 +653,10 @@ class QRigomatic(quicwindow.QUicWindow):
 
         # Update name widgets
         #
-        self.namespaceComboBox.blockSignals(True)
-        self.namespaceComboBox.setCurrentIndex(namespace)
-        self.namespaceComboBox.blockSignals(False)
+        with qsignalblocker.QSignalBlocker(self.namespaceComboBox), qsignalblocker.QSignalBlocker(self.nameLineEdit):
 
-        self.nameLineEdit.blockSignals(True)
-        self.nameLineEdit.setText(name)
-        self.nameLineEdit.blockSignals(False)
+            self.namespaceComboBox.setCurrentIndex(namespace)
+            self.nameLineEdit.setText(name)
 
     def invalidateNamespaces(self):
         """
@@ -671,10 +668,10 @@ class QRigomatic(quicwindow.QUicWindow):
         namespaces = om.MNamespace.getNamespaces(parentNamespace=':', recurse=True)
         namespaces.insert(0, '')
 
-        self.namespaceComboBox.blockSignals(True)
-        self.namespaceComboBox.clear()
-        self.namespaceComboBox.addItems(namespaces)
-        self.namespaceComboBox.blockSignals(False)
+        with qsignalblocker.QSignalBlocker(self.namespaceComboBox):
+
+            self.namespaceComboBox.clear()
+            self.namespaceComboBox.addItems(namespaces)
 
     def invalidateColor(self):
         """
@@ -698,9 +695,9 @@ class QRigomatic(quicwindow.QUicWindow):
             colorRGB = modifyutils.findWireframeColor(node, colorMode=colorMode)
             color = QtGui.QColor.fromRgbF(*colorRGB)
 
-            self.wireColorButton.blockSignals(True)
-            self.wireColorButton.setColor(color)
-            self.wireColorButton.blockSignals(False)
+            with qsignalblocker.QSignalBlocker(self.wireColorButton):
+
+                self.wireColorButton.setColor(color)
 
         else:
 
@@ -708,9 +705,9 @@ class QRigomatic(quicwindow.QUicWindow):
             #
             color = QtGui.QColor.fromRgbF(*self._currentColor)
 
-            self.wireColorButton.blockSignals(True)
-            self.wireColorButton.setColor(color)
-            self.wireColorButton.blockSignals(False)
+            with qsignalblocker.QSignalBlocker(self.wireColorButton):
+
+                self.wireColorButton.setColor(color)
 
     def invalidateSelection(self):
         """
