@@ -136,6 +136,12 @@ class QPublishTab(qabstracttab.QAbstractTab):
         #
         for node in self.scene.iterNodesByApiType(om.MFn.kTransform):
 
+            # Check if node is referenced
+            #
+            if node.isFromReferencedFile:
+
+                continue
+
             # Check if node is selectable
             #
             shapes = [shape for shape in node.iterShapes() if not shape.hasFn(om.MFn.kMesh)]
@@ -161,6 +167,12 @@ class QPublishTab(qabstracttab.QAbstractTab):
         # Iterate through meshes
         #
         for mesh in self.scene.iterNodesByApiType(om.MFn.kMesh):
+
+            # Check if mesh is referenced
+            #
+            if mesh.isFromReferencedFile:
+
+                continue
 
             # Check if mesh contains skin clusters
             #
@@ -277,14 +289,20 @@ class QPublishTab(qabstracttab.QAbstractTab):
 
                 # Check if export-set contains meshes
                 #
-                if len(exportSet.mesh.includeObjects) == 0:
+                hasMeshName = not stringutils.isNullOrEmpty(exportSet.mesh.name)
+                hasMeshList = len(exportSet.mesh.includeObjects) > 0
+
+                if not (hasMeshName or hasMeshList):
 
                     self.warning(f'"{exportSet.name}" FBX export-set is missing meshes!')
                     errorCount += 1
 
                 # Check if export-set contains bones
                 #
-                if exportSet.mesh.includeSkins and len(exportSet.skeleton.includeObjects) == 0:
+                hasSkeletonName = not stringutils.isNullOrEmpty(exportSet.skeleton.name)
+                hasSkeletonList = len(exportSet.skeleton.includeObjects) > 0
+
+                if exportSet.mesh.includeSkins and not (hasSkeletonName or hasSkeletonList):
 
                     self.warning(f'"{exportSet.name}" FBX export-set is missing bones!')
                     errorCount += 1
@@ -320,6 +338,12 @@ class QPublishTab(qabstracttab.QAbstractTab):
         self.info('Inspecting file-texture nodes...')
 
         for file in self.scene.iterNodesByApiType(om.MFn.kFileTexture):
+
+            # Check if texture is referenced
+            #
+            if file.isFromReferencedFile:
+
+                continue
 
             # Evaluate texture path
             #
@@ -372,17 +396,27 @@ class QPublishTab(qabstracttab.QAbstractTab):
 
         for node in self.scene.iterNodesByApiType(om.MFn.kTransform):
 
-            name = node.name()
+            # Check if node is referenced
+            #
+            if node.isFromReferencedFile:
+
+                continue
+
+            # Append absolute name to tracker
+            #
+            name = node.name(includeNamespace=True)
             names[name].append(node)
 
             nodeCount += 1
 
-        # Collect non-unique node names
+        # Evaluate track for non-unique node names
         #
         errors = []
 
         for (name, nodes) in names.items():
 
+            # Evaluate name occurrences
+            #
             nameCount = len(nodes)
 
             if nameCount > 1:
@@ -433,7 +467,7 @@ class QPublishTab(qabstracttab.QAbstractTab):
 
             # Evaluate transform matrix
             #
-            name = node.name()
+            name = node.name(includeNamespace=True)
 
             matrix = node.matrix(asTransformationMatrix=True)
             isIdentity = matrix.isEquivalent(om.MTransformationMatrix.kIdentity)
@@ -544,7 +578,7 @@ class QPublishTab(qabstracttab.QAbstractTab):
             # Check if `inheritsTransform` is enabled
             #
             node = mesh.parent()
-            name = node.name()
+            name = node.name(includeNamespace=True)
 
             inheritsTransform = bool(node.inheritsTransform)
 
@@ -555,8 +589,8 @@ class QPublishTab(qabstracttab.QAbstractTab):
 
             # Evaluate transform matrix
             #
-            matrix = node.matrix(asTransformationMatrix=True)
-            isIdentity = matrix.isEquivalent(om.MTransformationMatrix.kIdentity)
+            matrix = node.matrix()
+            isIdentity = matrix.isEquivalent(om.MMatrix.kIdentity, tolerance=1e-3)
 
             if not isIdentity:
 
@@ -636,7 +670,7 @@ class QPublishTab(qabstracttab.QAbstractTab):
                 preBindMatrix = skin.preBindMatrix(influenceId).inverse()
                 worldMatrix = influenceObject.worldMatrix()
 
-                inBindPose = preBindMatrix.isEquivalent(worldMatrix)
+                inBindPose = preBindMatrix.isEquivalent(worldMatrix, tolerance=1e-3)
 
                 if not inBindPose:
 
@@ -698,6 +732,8 @@ class QPublishTab(qabstracttab.QAbstractTab):
 
                 # Evaluate descendant
                 #
+                name = descendant.name(includeNamespace=True)
+
                 if descendant.hasFn(om.MFn.kConstraint, om.MFn.kPluginConstraintNode):
 
                     continue
@@ -709,12 +745,12 @@ class QPublishTab(qabstracttab.QAbstractTab):
 
                     if not isIdentity:
 
-                        self.warning(f'"{descendant.name()}" joint contains non-zero orientations!')
+                        self.warning(f'"{name}" joint contains non-zero orientations!')
                         errors.add(descendant)
 
                 else:
 
-                    self.warning(f'"{descendant.name()}" non-joint type found in export hierarchy!')
+                    self.warning(f'"{name}" non-joint type found in export hierarchy!')
                     errors.add(descendant)
 
                 hierarchy.add(descendant)
