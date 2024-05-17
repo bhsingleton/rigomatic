@@ -49,9 +49,19 @@ class QPublishTab(qabstracttab.QAbstractTab):
 
         # Declare public variables
         #
+        self.logTextEdit = None  # type: QtWidgets:QTextEdit
+        self.interopWidget = None
+        self.sceneSettingsCheckBox = None
+        self.fbxSettingsCheckBox = None
+        self.texturePathsCheckBox = None
+        self.nonUniqueNamesCheckBox = None
+        self.animatableNodesCheckBox = None
+        self.meshErrorsCheckBox = None
+        self.staticMeshesCheckBox = None
+        self.skeletalMeshesCheckBox = None
+        self.exportHierarchyCheckBox = None
         self.checkPushButton = None
         self.fixPushButton = None
-        self.logTextEdit = None  # type: QtWidgets:QTextEdit
     # endregion
 
     # region Properties
@@ -781,18 +791,35 @@ class QPublishTab(qabstracttab.QAbstractTab):
         #
         self.clear()
 
-        # Inspect scene settings
+        # Evaluate condition checks
         #
-        self.detectSceneErrors()
-        self.detectFbxErrors()
+        if self.sceneSettingsCheckBox.isChecked():
 
-        # Inspect scene nodes
-        #
-        self._textureErrors = self.detectTextureErrors()
-        self._nodeNameErrors = self.detectNonUniqueNodeNameErrors()
-        self._animatableNodeErrors = self.detectAnimatableNodeErrors()
-        self._skeletalMeshErrors = self.detectSkeletalMeshErrors()
-        self._exportHierarchyErrors = self.detectExportHierarchyErrors()
+            self.detectSceneErrors()
+
+        if self.fbxSettingsCheckBox.isChecked():
+
+            self.detectFbxErrors()
+
+        if self.texturePathsCheckBox.isChecked():
+
+            self._textureErrors = self.detectTextureErrors()
+
+        if self.nonUniqueNamesCheckBox.isChecked():
+
+            self._nodeNameErrors = self.detectNonUniqueNodeNameErrors()
+
+        if self.animatableNodesCheckBox.isChecked():
+
+            self._animatableNodeErrors = self.detectAnimatableNodeErrors()
+
+        if self.skeletalMeshesCheckBox.isChecked():
+
+            self._skeletalMeshErrors = self.detectSkeletalMeshErrors()
+
+        if self.exportHierarchyCheckBox.isChecked():
+
+            self._exportHierarchyErrors = self.detectExportHierarchyErrors()
 
     def fixScene(self):
         """
