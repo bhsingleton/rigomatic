@@ -126,7 +126,7 @@ class QModifyTab(qabstracttab.QAbstractTab):
         self.attributeItemFilterModel.setObjectName('attributeItemFilterModel')
         self.attributeItemFilterModel.setSourceModel(self.attributeItemModel)
         self.filterLineEdit.textChanged.connect(self.attributeItemFilterModel.setFilterWildcard)
-        self.userDefinedCheckBox.toggled.connect(self.attributeItemFilterModel.setIgnoreStaticAttributes)
+        self.userDefinedCheckBox.toggled.connect(self.attributeItemFilterModel.setHideStaticAttributes)
 
         self.attributeTreeView.setModel(self.attributeItemFilterModel)
         self.attributeTreeView.setItemDelegate(self.attributeStyledItemDelegate)
