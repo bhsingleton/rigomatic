@@ -960,6 +960,8 @@ class QPublishTab(qabstracttab.QAbstractTab):
                 self.warning(f'"{meshName}" mesh contains multiple skin clusters!')
                 errors.add(mesh)
 
+                continue  # No point continuing if we don't know which skin cluster to test!
+
             # Evaluate root joint
             #
             skin = skins[0]
@@ -975,38 +977,40 @@ class QPublishTab(qabstracttab.QAbstractTab):
             # Evaluate export hierarchy
             #
             influences = skin.influences()
+            influenceIds = list(influences.keys())
             influenceObjects = list(influences.values())
 
             for descendant in rootJoint.descendants(apiType=om.MFn.kTransform, includeSelf=True):
 
-                # Evaluate descendant
+                # Evaluate descendant type
                 #
                 descendantName = descendant.name(includeNamespace=True)
 
-                if descendant.hasFn(om.MFn.kConstraint, om.MFn.kPluginConstraintNode):
+                isJoint = descendant.hasFn(om.MFn.kJoint)
+                isConstraint = descendant.hasFn(om.MFn.kConstraint, om.MFn.kPluginConstraintNode)
 
-                    continue
+                if isConstraint:
 
-                elif descendant.hasFn(om.MFn.kJoint):
+                    continue  # We can skip these!
 
-                    preEulerRotation = descendant.preEulerRotation()
-                    isIdentity = preEulerRotation.isEquivalent(om.MEulerRotation.kIdentity)
+                elif isJoint:
 
-                    if not isIdentity:
-
-                        self.warning(f'"{descendantName}" joint contains non-zero orientations!')
-                        errors.add(descendant)
+                    pass  # Go to next test phase
 
                 else:
 
                     self.warning(f'"{descendantName}" non-joint type found in export hierarchy!')
                     errors.add(descendant)
 
+                    continue  # No further testing required!
+
                 # Evaluate bind pose
                 #
-                try:
+                hasBindPose = descendant in influenceObjects
 
-                    influenceId = influenceObjects.index(descendant)
+                if hasBindPose:
+
+                    influenceId = influenceIds[influenceObjects.index(descendant)]
                     preBindMatrix = skin.preBindMatrix(influenceId).inverse()
                     worldMatrix = descendant.worldMatrix()
 
@@ -1017,9 +1021,19 @@ class QPublishTab(qabstracttab.QAbstractTab):
                         self.warning(f'"{descendantName}" joint is not in bind pose!')
                         errors.add(mesh)
 
-                except ValueError:
+                else:
 
-                    continue
+                    continue  # No further testing required!
+
+                # Evaluate pre-rotations
+                #
+                preEulerRotation = descendant.preEulerRotation()
+                isIdentity = preEulerRotation.isEquivalent(om.MEulerRotation.kIdentity)
+
+                if not isIdentity:
+
+                    self.warning(f'"{descendantName}" joint contains non-zero orientations!')
+                    errors.add(descendant)
 
             skeletalMeshCount += 1
 
