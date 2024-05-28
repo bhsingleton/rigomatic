@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>436</width>
-    <height>679</height>
+    <height>835</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -37,7 +37,7 @@
    </item>
    <item row="2" column="0" colspan="2">
     <widget class="QWidget" name="interopWidget" native="true">
-     <layout class="QGridLayout" name="gridLayout_2">
+     <layout class="QGridLayout" name="interopLayout">
       <property name="leftMargin">
        <number>0</number>
       </property>
@@ -50,105 +50,14 @@
       <property name="bottomMargin">
        <number>0</number>
       </property>
-      <item row="0" column="1">
-       <widget class="QCheckBox" name="fbxSettingsCheckBox">
-        <property name="minimumSize">
-         <size>
-          <width>0</width>
-          <height>24</height>
-         </size>
-        </property>
-        <property name="maximumSize">
-         <size>
-          <width>16777215</width>
-          <height>24</height>
-         </size>
-        </property>
-        <property name="text">
-         <string>Fbx Settings</string>
-        </property>
-        <property name="checked">
-         <bool>true</bool>
-        </property>
-       </widget>
-      </item>
-      <item row="4" column="0">
-       <widget class="QCheckBox" name="staticMeshesCheckBox">
-        <property name="enabled">
-         <bool>true</bool>
-        </property>
+      <item row="2" column="1">
+       <widget class="QCheckBox" name="animatableNodesCheckBox">
         <property name="sizePolicy">
-         <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+         <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
           <horstretch>0</horstretch>
           <verstretch>0</verstretch>
          </sizepolicy>
         </property>
-        <property name="minimumSize">
-         <size>
-          <width>0</width>
-          <height>24</height>
-         </size>
-        </property>
-        <property name="maximumSize">
-         <size>
-          <width>16777215</width>
-          <height>24</height>
-         </size>
-        </property>
-        <property name="text">
-         <string>Static Meshes</string>
-        </property>
-        <property name="checked">
-         <bool>true</bool>
-        </property>
-       </widget>
-      </item>
-      <item row="4" column="1">
-       <widget class="QCheckBox" name="skeletalMeshesCheckBox">
-        <property name="minimumSize">
-         <size>
-          <width>0</width>
-          <height>24</height>
-         </size>
-        </property>
-        <property name="maximumSize">
-         <size>
-          <width>16777215</width>
-          <height>24</height>
-         </size>
-        </property>
-        <property name="text">
-         <string>Skeletal Meshes</string>
-        </property>
-        <property name="checked">
-         <bool>true</bool>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="0">
-       <widget class="QCheckBox" name="sceneSettingsCheckBox">
-        <property name="minimumSize">
-         <size>
-          <width>0</width>
-          <height>24</height>
-         </size>
-        </property>
-        <property name="maximumSize">
-         <size>
-          <width>16777215</width>
-          <height>24</height>
-         </size>
-        </property>
-        <property name="text">
-         <string>Scene Settings</string>
-        </property>
-        <property name="checked">
-         <bool>true</bool>
-        </property>
-       </widget>
-      </item>
-      <item row="3" column="1">
-       <widget class="QCheckBox" name="animatableNodesCheckBox">
         <property name="minimumSize">
          <size>
           <width>0</width>
@@ -169,10 +78,38 @@
         </property>
        </widget>
       </item>
-      <item row="3" column="0">
+      <item row="0" column="0">
+       <widget class="QCheckBox" name="sceneSettingsCheckBox">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="minimumSize">
+         <size>
+          <width>0</width>
+          <height>24</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>16777215</width>
+          <height>24</height>
+         </size>
+        </property>
+        <property name="text">
+         <string>Scene Settings</string>
+        </property>
+        <property name="checked">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="0">
        <widget class="QCheckBox" name="nonUniqueNamesCheckBox">
         <property name="sizePolicy">
-         <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+         <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
           <horstretch>0</horstretch>
           <verstretch>0</verstretch>
          </sizepolicy>
@@ -199,6 +136,12 @@
       </item>
       <item row="1" column="0">
        <widget class="QCheckBox" name="texturePathsCheckBox">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
         <property name="minimumSize">
          <size>
           <width>0</width>
@@ -221,8 +164,113 @@
       </item>
       <item row="1" column="1">
        <widget class="QCheckBox" name="referencePathsCheckBox">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="minimumSize">
+         <size>
+          <width>0</width>
+          <height>24</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>16777215</width>
+          <height>24</height>
+         </size>
+        </property>
         <property name="text">
          <string>Reference Paths</string>
+        </property>
+        <property name="checked">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="QCheckBox" name="fbxSettingsCheckBox">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="minimumSize">
+         <size>
+          <width>0</width>
+          <height>24</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>16777215</width>
+          <height>24</height>
+         </size>
+        </property>
+        <property name="text">
+         <string>Fbx Settings</string>
+        </property>
+        <property name="checked">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="0">
+       <widget class="QCheckBox" name="staticMeshesCheckBox">
+        <property name="enabled">
+         <bool>true</bool>
+        </property>
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="minimumSize">
+         <size>
+          <width>0</width>
+          <height>24</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>16777215</width>
+          <height>24</height>
+         </size>
+        </property>
+        <property name="text">
+         <string>Static Meshes</string>
+        </property>
+        <property name="checked">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="1">
+       <widget class="QCheckBox" name="skeletalMeshesCheckBox">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="minimumSize">
+         <size>
+          <width>0</width>
+          <height>24</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>16777215</width>
+          <height>24</height>
+         </size>
+        </property>
+        <property name="text">
+         <string>Skeletal Meshes</string>
         </property>
         <property name="checked">
          <bool>true</bool>
