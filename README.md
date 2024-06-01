@@ -1,7 +1,7 @@
 # Rig o'matic  
 A Maya python based rigging toolkit that helps support your day-to-day needs.  
 
-### Requirements:
+## Requirements:
 This tool requires the following PIP installs: Qt.py, six, numpy and scipy.  
 On top of the following python packages: [dcc](https://github.com/bhsingleton/dcc) and [mpy](https://github.com/bhsingleton/mpy).  
 The following plug-ins, are optional, but highly recommended: [pointHelper](https://github.com/bhsingleton/PointHelper), [pointOnCurveConstraint](https://github.com/bhsingleton/PointOnCurveConstraint) and [transformConstraint](https://github.com/bhsingleton/TransformConstraint).  
@@ -18,7 +18,7 @@ Make sure you have pip installed using:
 Now you can install the necessary dependencies using:  
 > mayapy.exe -m pip install Qt.py --user  
 
-### How to open:
+## How to open:
 
 ```
 from rigomatic.ui import qrigomatic
