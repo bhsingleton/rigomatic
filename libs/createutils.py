@@ -35,8 +35,10 @@ def createNode(typeName, **kwargs):
 
     # Update transform matrix
     #
+    skipScale = typeName == 'joint'
+
     matrix = kwargs.get('matrix', om.MMatrix.kIdentity)
-    node.setMatrix(matrix)
+    node.setMatrix(matrix, skipScale=skipScale)
 
     # Add any requested shapes
     #
@@ -100,9 +102,10 @@ def createNodesFromSelection(typeName, selection, **kwargs):
         # Create node and copy transform
         #
         name = scene.makeNameUnique(selectedNode.name())
+        skipScale = typeName == 'joint'
 
         node = scene.createNode(typeName, name=name)
-        node.copyTransform(selectedNode)
+        node.copyTransform(selectedNode, skipScale=skipScale)
 
         nodes.append(node)
 
