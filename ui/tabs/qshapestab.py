@@ -9,7 +9,6 @@ from enum import IntEnum
 from random import randint
 from dcc.python import stringutils
 from dcc.maya.libs import transformutils, shapeutils
-from dcc.maya.json import mshapeparser
 from dcc.maya.decorators.undo import undo
 from . import qabstracttab
 from ..widgets import qcolorbutton
@@ -584,20 +583,16 @@ class QShapesTab(qabstracttab.QAbstractTab):
         parentMatrix = mesh.parentMatrix()
 
         points = [(mesh.getPoint(vertexIndex) + (mesh.getVertexNormal(vertexIndex, True) * offset)) * parentMatrix for vertexIndex in vertexIndices]
-        periodic = degree > 1
+        form = om.MFnNurbsCurve.kClosed if (degree == 1) else om.MFnNurbsCurve.kPeriodic
 
-        if periodic:
+        if form == om.MFnNurbsCurve.kPeriodic:
 
             points.extend([om.MPoint(x) for x in points[:degree]])  # A periodic curve requires N overlapping CVs!
-
-        else:
-
-            points.append(om.MPoint(points[0]))
 
         # Create curve from points
         #
         node = self.scene.createNode('transform', name='curve1')
-        curve = shapeutils.createCurveFromPoints(points, degree, periodic=periodic, parent=node.object())
+        curve = shapeutils.createCurveFromPoints(points, degree, form=form, parent=node.object())
 
         node.select(replace=True)
 
@@ -1147,7 +1142,7 @@ class QShapesTab(qabstracttab.QAbstractTab):
         if success and not stringutils.isNullOrEmpty(shapeName):
 
             filePath = self.scene.getAbsoluteShapePath(shapeName)
-            mshapeparser.createShapeTemplate(selectedNode.object(), filePath)
+            selectedNode.saveShapes(filePath)
 
             self.invalidateShapes()
 
