@@ -1,7 +1,7 @@
 import os
 import re
 import math
-import pyperclip
+import clipman
 
 from maya import cmds as mc
 from maya.api import OpenMaya as om
@@ -870,14 +870,14 @@ class QPublishTab(qabstracttab.QAbstractTab):
         if debugCount > 0:
 
             self.info('See clipboard for selection commands!')
-            pyperclip.copy(';\n'.join(debugCommands))
+            clipman.set(';\n'.join(debugCommands))
 
         # Evaluate errors
         #
         errorCount = len(errors)
 
         if errorCount > 0:
-
+            
             self.error(f'{errorCount}/{staticMeshCount} failed!')
 
         else:
