@@ -869,9 +869,16 @@ class QPublishTab(qabstracttab.QAbstractTab):
 
         if debugCount > 0:
 
-            self.info('See clipboard for selection commands!')
-            clipman.set(';\n'.join(debugCommands))
+            try:
 
+                clipman.init()
+                clipman.set(';\n'.join(debugCommands))
+                self.info('See clipboard for debug commands!')
+
+            except clipman.exceptions.ClipmanBaseException as exception:
+
+                log.warning(exception)
+            
         # Evaluate errors
         #
         errorCount = len(errors)
