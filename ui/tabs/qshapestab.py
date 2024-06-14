@@ -587,7 +587,15 @@ class QShapesTab(qabstracttab.QAbstractTab):
 
         if form == om.MFnNurbsCurve.kPeriodic:
 
-            points.extend([om.MPoint(x) for x in points[:degree]])  # A periodic curve requires N overlapping CVs!
+            points.extend(tuple(map(om.MPoint, points[:degree])))  # A periodic curve requires overlapping points equal to the degree!
+
+        elif form == om.MFnNurbsCurve.kClosed:
+
+            points.append(om.MPoint(points[0]))  # A closed curve requires an overlapping point!
+
+        else:
+
+            pass
 
         # Create curve from points
         #
