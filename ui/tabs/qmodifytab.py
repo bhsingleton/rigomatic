@@ -47,13 +47,22 @@ class QModifyTab(qabstracttab.QAbstractTab):
         self.meltPivotsPushButton = None
         self.freezeParentOffsetsPushButton = None
         self.meltParentOffsetsPushButton = None
-        self.resetDivider = None
-        self.resetLabel = None
-        self.resetLine = None
+
+        self.resetGroupBox = None
         self.resetPivotsPushButton = None
         self.resetPreRotationsPushButton = None
         self.zeroTransformsPushButton = None
         self.sanitizeTransformsPushButton = None
+
+        self.displayGroupBox = None
+        self.localAxesPushButton = None
+        self.selectionHandlesPushButton = None
+        self.cvsPushButton = None
+        self.editPointsPushButton = None
+        self.verticesPushButton = None
+        self.edgeHardnessPushButton = None
+        self.faceNormalsPushButton = None
+        self.vertexNormalsPushButton = None
     # endregion
 
     # region Methods
@@ -529,4 +538,150 @@ class QModifyTab(qabstracttab.QAbstractTab):
         if self.selectionCount > 0:
 
             self.sanitizeTransforms(*self.selection)
+
+    @QtCore.Slot()
+    def on_localAxesPushButton_clicked(self):
+        """
+        Slot method for the `localAxesPushButton` widget's `clicked` signal.
+
+        :rtype: None
+        """
+
+        for node in self.selection:
+
+            if node.hasFn(om.MFn.kDagNode):
+
+                node.displayLocalAxis = not node.displayLocalAxis
+
+            else:
+
+                continue
+
+    @QtCore.Slot()
+    def on_selectionHandlesPushButton_clicked(self):
+        """
+        Slot method for the `selectionHandlesPushButton` widget's `clicked` signal.
+
+        :rtype: None
+        """
+
+        for node in self.selection:
+
+            if node.hasFn(om.MFn.kDagNode):
+
+                node.displayHandle = not node.displayHandle
+
+            else:
+
+                continue
+
+    @QtCore.Slot()
+    def on_cvsPushButton_clicked(self):
+        """
+        Slot method for the `cvsPushButton` widget's `clicked` signal.
+
+        :rtype: None
+        """
+
+        for node in self.selection:
+
+            if not node.hasFn(om.MFn.kTransform):
+
+                continue
+
+            for shape in node.iterShapes(apiType=om.MFn.kNurbsCurve):
+
+                shape.dispCV = not shape.dispCV
+
+    @QtCore.Slot()
+    def on_editPointsPushButton_clicked(self):
+        """
+        Slot method for the `editPointsPushButton` widget's `clicked` signal.
+
+        :rtype: None
+        """
+
+        for node in self.selection:
+
+            if not node.hasFn(om.MFn.kTransform):
+
+                continue
+
+            for shape in node.iterShapes(apiType=om.MFn.kNurbsCurve):
+
+                shape.dispEP = not shape.dispEP
+
+    @QtCore.Slot()
+    def on_verticesPushButton_clicked(self):
+        """
+        Slot method for the `verticesPushButton` widget's `clicked` signal.
+
+        :rtype: None
+        """
+
+        for node in self.selection:
+
+            if not node.hasFn(om.MFn.kTransform):
+
+                continue
+
+            for shape in node.iterShapes(apiType=om.MFn.kMesh):
+
+                shape.displayVertices = not shape.displayVertices
+
+    @QtCore.Slot()
+    def on_edgeHardnessPushButton_clicked(self):
+        """
+        Slot method for the `edgeHardnessPushButton` widget's `clicked` signal.
+
+        :rtype: None
+        """
+
+        for node in self.selection:
+
+            if not node.hasFn(om.MFn.kTransform):
+
+                continue
+
+            for shape in node.iterShapes(apiType=om.MFn.kMesh):
+
+                shape.displayEdges = 2 if (shape.displayEdges == 0) else 0
+
+    @QtCore.Slot()
+    def on_faceNormalsPushButton_clicked(self):
+        """
+        Slot method for the `faceNormalsPushButton` widget's `clicked` signal.
+
+        :rtype: None
+        """
+
+        for node in self.selection:
+
+            if not node.hasFn(om.MFn.kTransform):
+
+                continue
+
+            for shape in node.iterShapes(apiType=om.MFn.kMesh):
+
+                shape.normalType = 1  # Face
+                shape.displayNormals = not shape.displayNormals
+
+    @QtCore.Slot()
+    def on_vertexNormalsPushButton_clicked(self):
+        """
+        Slot method for the `vertexNormalsPushButton` widget's `clicked` signal.
+
+        :rtype: None
+        """
+
+        for node in self.selection:
+
+            if not node.hasFn(om.MFn.kTransform):
+
+                continue
+
+            for shape in node.iterShapes(apiType=om.MFn.kMesh):
+
+                shape.normalType = 2  # Vtx
+                shape.displayNormals = not shape.displayNormals
     # endregion
