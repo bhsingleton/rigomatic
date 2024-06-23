@@ -613,7 +613,7 @@ class QPublishTab(qabstracttab.QAbstractTab):
             name = node.name(includeNamespace=True)
 
             matrix = node.matrix(asTransformationMatrix=True)
-            isIdentity = matrix.isEquivalent(om.MTransformationMatrix.kIdentity)
+            isIdentity = matrix.isEquivalent(om.MTransformationMatrix.kIdentity, tolerance=1e-3)
 
             if not isIdentity:
 
@@ -1035,7 +1035,7 @@ class QPublishTab(qabstracttab.QAbstractTab):
                 # Evaluate pre-rotations
                 #
                 preEulerRotation = descendant.preEulerRotation()
-                isIdentity = preEulerRotation.isEquivalent(om.MEulerRotation.kIdentity)
+                isIdentity = preEulerRotation.isEquivalent(om.MEulerRotation.kIdentity, tolerance=1e-3)
 
                 if not isIdentity:
 
