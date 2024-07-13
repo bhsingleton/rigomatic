@@ -271,13 +271,13 @@ class QModifyTab(qabstracttab.QAbstractTab):
 
             # Check if this is a transform node
             #
-            if not node.hasFn(om.MFn.kTransform):
+            if node.hasFn(om.MFn.kTransform):
+
+                node.unfreezeTransform()
+
+            else:
 
                 continue
-
-            # Unfreeze transform
-            #
-            node.unfreezeTransform()
 
     @undo(name='Reset Pivots')
     def resetPivots(self, *nodes):
@@ -294,13 +294,13 @@ class QModifyTab(qabstracttab.QAbstractTab):
 
             # Check if this is a transform node
             #
-            if not node.hasFn(om.MFn.kTransform):
+            if node.hasFn(om.MFn.kTransform):
+
+                node.resetPivots()
+
+            else:
 
                 continue
-
-            # Reset pivots
-            #
-            node.resetPivots()
 
     @undo(name='Reset Pre-Rotations')
     def resetPreRotations(self, *nodes):
@@ -381,7 +381,7 @@ class QModifyTab(qabstracttab.QAbstractTab):
 
             # Push change to any shapes
             #
-            intermediates = node.intermediateObjects()
+            intermediates = node.intermediateObjects(apiType=om.MFn.kMesh)
             isDeformed = len(intermediates) > 0
 
             if isDeformed:
@@ -391,12 +391,28 @@ class QModifyTab(qabstracttab.QAbstractTab):
                     controlPoints = [om.MPoint(controlPoint) * matrix for controlPoint in intermediate.controlPoints()]
                     intermediate.setControlPoints(controlPoints)
 
+                    hasLockedNormals = intermediate.isNormalLocked(0)
+
+                    if hasLockedNormals:
+
+                        normals = [om.MVector(normal) * matrix for normal in intermediate.getNormals()]
+                        intermediate.setNormals(normals)
+                        intermediate.updateSurface()
+
             else:
 
-                for shape in node.iterShapes():
+                for shape in node.iterShapes(apiType=om.MFn.kMesh):
 
                     controlPoints = [om.MPoint(controlPoint) * matrix for controlPoint in shape.controlPoints()]
                     shape.setControlPoints(controlPoints)
+
+                    hasLockedNormals = shape.isNormalLocked(0)
+
+                    if hasLockedNormals:
+
+                        normals = [om.MVector(normal) * matrix for normal in shape.getNormals()]
+                        shape.setNormals(normals)
+                        shape.updateSurface()
 
             # Re-lock attributes if deformed
             #
@@ -664,7 +680,7 @@ class QModifyTab(qabstracttab.QAbstractTab):
             for shape in node.iterShapes(apiType=om.MFn.kMesh):
 
                 shape.normalType = 1  # Face
-                shape.displayNormals = not shape.displayNormals
+                shape.displayNormal = not shape.displayNormal
 
     @QtCore.Slot()
     def on_vertexNormalsPushButton_clicked(self):
@@ -683,5 +699,5 @@ class QModifyTab(qabstracttab.QAbstractTab):
             for shape in node.iterShapes(apiType=om.MFn.kMesh):
 
                 shape.normalType = 2  # Vtx
-                shape.displayNormals = not shape.displayNormals
+                shape.displayNormal = not shape.displayNormal
     # endregion
