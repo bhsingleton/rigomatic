@@ -612,8 +612,9 @@ class QPublishTab(qabstracttab.QAbstractTab):
             #
             name = node.name(includeNamespace=True)
 
-            matrix = node.matrix(asTransformationMatrix=True)
-            isIdentity = matrix.isEquivalent(om.MTransformationMatrix.kIdentity, tolerance=1e-3)
+            matrix = node.matrix()
+            restMatrix = node.preEulerRotation().asMatrix()
+            isIdentity = matrix.isEquivalent(restMatrix, tolerance=1e-3)
 
             if not isIdentity:
 
@@ -957,6 +958,16 @@ class QPublishTab(qabstracttab.QAbstractTab):
                 self.warning(f'"{meshName}" skeletal mesh is selectable!')
                 errors.add(mesh)
 
+            # Evaluate intermediate objects
+            #
+            intermediateObjects = node.intermediateObjects()
+            numIntermediateObjects = len(intermediateObjects)
+
+            if numIntermediateObjects > 1:
+
+                self.warning(f'"{meshName}" has more than one intermediate object!')
+                errors.add(mesh)
+
             # Evaluate skin clusters
             #
             skins = mesh.getDeformersByType(om.MFn.kSkinClusterFilter)
@@ -972,6 +983,8 @@ class QPublishTab(qabstracttab.QAbstractTab):
             # Evaluate root joint
             #
             skin = skins[0]
+            skinName = skin.name()
+
             rootJoint = skin.rootInfluence()
 
             if rootJoint is None:
@@ -984,6 +997,7 @@ class QPublishTab(qabstracttab.QAbstractTab):
             # Evaluate export hierarchy
             #
             influences = skin.influences()
+            
             influenceIds = list(influences.keys())
             influenceObjects = list(influences.values())
 
@@ -1025,7 +1039,7 @@ class QPublishTab(qabstracttab.QAbstractTab):
 
                     if not inBindPose:
 
-                        self.warning(f'"{descendantName}" joint is not in bind pose!')
+                        self.warning(f'"{descendantName}" joint is not in bind pose for "{skinName}" deformer!')
                         errors.add(mesh)
 
                 else:
