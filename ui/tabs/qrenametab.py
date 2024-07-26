@@ -149,26 +149,26 @@ class QRenameTab(qabstracttab.QAbstractTab):
 
         # Load user preferences
         #
-        self.setOption(settings.value('tabs/rename/option', defaultValue=0))
-        self.setCurrentType(settings.value('tabs/rename/type', defaultValue='transform'))
+        self.setOption(settings.value('tabs/rename/option', defaultValue=0, type=int))
+        self.setCurrentType(settings.value('tabs/rename/type', defaultValue='transform', type=str))
 
-        self.concatenateGroupBox.setChecked(bool(settings.value('tabs/rename/concatenateEnabled', defaultValue=1)))
-        self.prefixLineEdit.setText(str(settings.value('tabs/rename/prefix', defaultValue='')))
-        self.nameLineEdit.setText(str(settings.value('tabs/rename/name', defaultValue='')))
-        self.suffixLineEdit.setText(str(settings.value('tabs/rename/suffix', defaultValue='')))
+        self.concatenateGroupBox.setChecked(bool(settings.value('tabs/rename/concatenateEnabled', defaultValue=1, type=int)))
+        self.prefixLineEdit.setText(settings.value('tabs/rename/prefix', defaultValue='', type=str))
+        self.nameLineEdit.setText(settings.value('tabs/rename/name', defaultValue='', type=str))
+        self.suffixLineEdit.setText(settings.value('tabs/rename/suffix', defaultValue='', type=str))
 
-        self.numerateGroupBox.setChecked(bool(settings.value('tabs/rename/numerateEnabled', defaultValue=1)))
-        self.paddingSpinBox.setValue(int(settings.value('tabs/rename/padding', defaultValue=2)))
-        self.startSpinBox.setValue(int(settings.value('tabs/rename/start', defaultValue=1)))
-        self.stepSpinBox.setValue(int(settings.value('tabs/rename/step', defaultValue=1)))
+        self.numerateGroupBox.setChecked(bool(settings.value('tabs/rename/numerateEnabled', defaultValue=1, type=int)))
+        self.paddingSpinBox.setValue(settings.value('tabs/rename/padding', defaultValue=2, type=int))
+        self.startSpinBox.setValue(settings.value('tabs/rename/start', defaultValue=1, type=int))
+        self.stepSpinBox.setValue(settings.value('tabs/rename/step', defaultValue=1, type=int))
 
-        self.trimGroupBox.setChecked(bool(settings.value('tabs/rename/trimEnabled', defaultValue=1)))
-        self.leftSpinBox.setValue(int(settings.value('tabs/rename/leftTrim', defaultValue=0)))
-        self.rightSpinBox.setValue(int(settings.value('tabs/rename/rightTrim', defaultValue=0)))
+        self.trimGroupBox.setChecked(bool(settings.value('tabs/rename/trimEnabled', defaultValue=1, type=int)))
+        self.leftSpinBox.setValue(settings.value('tabs/rename/leftTrim', defaultValue=0, type=int))
+        self.rightSpinBox.setValue(settings.value('tabs/rename/rightTrim', defaultValue=0, type=int))
 
-        self.replaceGroupBox.setChecked(bool(settings.value('tabs/rename/replaceEnabled', defaultValue=1)))
-        self.searchLineEdit.setText(str(settings.value('tabs/rename/search', defaultValue='')))
-        self.replaceLineEdit.setText(str(settings.value('tabs/rename/replace', defaultValue='')))
+        self.replaceGroupBox.setChecked(bool(settings.value('tabs/rename/replaceEnabled', defaultValue=1, type=int)))
+        self.searchLineEdit.setText(settings.value('tabs/rename/search', defaultValue='', type=str))
+        self.replaceLineEdit.setText(settings.value('tabs/rename/replace', defaultValue='', type=str))
 
     def saveSettings(self, settings):
         """

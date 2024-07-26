@@ -230,14 +230,14 @@ class QShapesTab(qabstracttab.QAbstractTab):
 
         # Load user preferences
         #
-        self.setCurveDegree(int(settings.value('tabs/shapes/curveDegree', defaultValue=1)))
-        self.setCurveOffset(float(settings.value('tabs/shapes/curveOffset', defaultValue=0.0)))
+        self.setCurveDegree(settings.value('tabs/shapes/curveDegree', defaultValue=1, type=int))
+        self.setCurveOffset(settings.value('tabs/shapes/curveOffset', defaultValue=0.0, type=float))
 
-        self.setPreservePosition(bool(settings.value('tabs/shapes/preservePosition', defaultValue=0)))
+        self.setPreservePosition(bool(settings.value('tabs/shapes/preservePosition', defaultValue=0, type=int)))
 
         self.setStartColor(settings.value('tabs/shapes/startColor', defaultValue=QtCore.Qt.black))
         self.setEndColor(settings.value('tabs/shapes/endColor', defaultValue=QtCore.Qt.white))
-        self.setUseSelectedNodes(bool(settings.value('tabs/shapes/useSelectedNodes', defaultValue=0)))
+        self.setUseSelectedNodes(bool(settings.value('tabs/shapes/useSelectedNodes', defaultValue=0, type=int)))
 
     def saveSettings(self, settings):
         """

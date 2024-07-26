@@ -354,7 +354,7 @@ class QRigomatic(quicwindow.QUicWindow):
         self._currentColor = (color.redF(), color.greenF(), color.blue())
 
         self.setColorMode(settings.value('editor/colorMode', defaultValue=2, type=int))
-        self.tabControl.setCurrentIndex(settings.value('editor/currentTabIndex', defaultValue=0, type=int))
+        self.setCurrentTabIndex(settings.value('editor/currentTabIndex', defaultValue=0, type=int))
 
         # Load tab settings
         #
@@ -484,19 +484,21 @@ class QRigomatic(quicwindow.QUicWindow):
         :rtype: None
         """
 
-        colorMode = ColorMode(colorMode)
-        colorModeName = colorMode.name
+        if isinstance(colorMode, int):
 
-        for action in self.colorModeActionGroup.actions():
+            colorMode = ColorMode(colorMode)
+            colorModeName = colorMode.name
 
-            if action.whatsThis() == colorModeName:
+            for action in self.colorModeActionGroup.actions():
 
-                action.setChecked(True)
-                break
+                if action.whatsThis() == colorModeName:
 
-            else:
+                    action.setChecked(True)
+                    break
 
-                continue
+                else:
+
+                    continue
 
     def wireColor(self):
         """
@@ -595,12 +597,24 @@ class QRigomatic(quicwindow.QUicWindow):
 
     def currentTabIndex(self):
         """
-        Returns the tab index that currently open.
+        Returns the active tab index.
 
         :rtype: int
         """
 
         return self.tabControl.currentIndex()
+
+    def setCurrentTabIndex(self, currentIndex):
+        """
+        Updates the active tab index.
+
+        :type currentIndex: int
+        :rtype: None
+        """
+
+        if isinstance(currentIndex, int):
+
+            self.tabControl.setCurrentIndex(currentIndex)
 
     def iterTabs(self):
         """

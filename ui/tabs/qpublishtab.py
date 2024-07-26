@@ -98,7 +98,7 @@ class QPublishTab(qabstracttab.QAbstractTab):
 
         for checkBox in checkBoxes:
 
-            checkBox.setChecked(bool(settings.value(f'tabs/publish/{checkBox.objectName()}', defaultValue=1)))
+            checkBox.setChecked(bool(settings.value(f'tabs/publish/{checkBox.objectName()}', defaultValue=1, type=int)))
 
     def saveSettings(self, settings):
         """
@@ -994,10 +994,18 @@ class QPublishTab(qabstracttab.QAbstractTab):
 
                 continue  # Can no longer perform export hierarchy tests!
 
-            # Evaluate export hierarchy
+            # Evaluate influence count
             #
             influences = skin.influences()
-            
+            numInfluences = len(influences)
+
+            if numInfluences == 0:
+
+                self.warning(f'"{meshName}" mesh has no influences!')
+                errors.add(mesh)
+
+            # Evaluate export hierarchy
+            #
             influenceIds = list(influences.keys())
             influenceObjects = list(influences.values())
 
