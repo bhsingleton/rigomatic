@@ -9,7 +9,7 @@ from enum import IntEnum
 from random import randint
 from dcc.python import stringutils
 from dcc.maya.libs import transformutils, shapeutils
-from dcc.maya.decorators.undo import undo
+from dcc.maya.decorators import undo
 from . import qabstracttab
 from ..widgets import qcolorbutton
 from ...libs import createutils, modifyutils, ColorMode
@@ -441,7 +441,7 @@ class QShapesTab(qabstracttab.QAbstractTab):
 
             QtWidgets.QColorDialog.setCustomColor(i, color)
 
-    @undo(name='Create Custom Shapes')
+    @undo.Undo(name='Create Custom Shapes')
     def createCustomShapes(self, filename, name='', colorRGB=None, selection=None):
         """
         Creates the specified custom shape.
@@ -498,7 +498,7 @@ class QShapesTab(qabstracttab.QAbstractTab):
 
             return node
 
-    @undo(name='Add Custom Shapes')
+    @undo.Undo(name='Add Custom Shapes')
     def addCustomShapes(self, filename, nodes, colorRGB=None):
         """
         Adds the specified custom shape to the supplied nodes.
@@ -524,7 +524,7 @@ class QShapesTab(qabstracttab.QAbstractTab):
             node.addShape(filename, colorRGB=colorRGB)
             node.renameShapes()
 
-    @undo(name='Create Star')
+    @undo.Undo(name='Create Star')
     def createStar(self, name='', numPoints=12, colorRGB=None, parent=None):
         """
         Adds a star to the supplied nodes.
@@ -556,7 +556,7 @@ class QShapesTab(qabstracttab.QAbstractTab):
 
             log.warning(f'Cannot add star to "{parent.typeName}" node!')
 
-    @undo(name='Convert Edge to Curve')
+    @undo.Undo(name='Convert Edge to Curve')
     def convertEdgeToCurve(self, mesh, edgeComponent, degree=1, offset=0.0):
         """
         Converts the supplied mesh and edge component to a curve.
@@ -606,7 +606,7 @@ class QShapesTab(qabstracttab.QAbstractTab):
 
         return node, curve
 
-    @undo(name='Convert Edge to Helper')
+    @undo.Undo(name='Convert Edge to Helper')
     def convertEdgeToHelper(self, mesh, edgeComponent, offset=0.0):
         """
         Converts the supplied mesh and edge component to a curve.
@@ -644,7 +644,7 @@ class QShapesTab(qabstracttab.QAbstractTab):
 
         return node, helper
 
-    @undo(name='Rename Shapes')
+    @undo.Undo(name='Rename Shapes')
     def renameShapes(self, *nodes):
         """
         Renames all the shapes on the supplied nodes.
@@ -667,7 +667,7 @@ class QShapesTab(qabstracttab.QAbstractTab):
             #
             node.renameShapes()
 
-    @undo(name='Remove Shapes')
+    @undo.Undo(name='Remove Shapes')
     def removeShapes(self, *nodes):
         """
         Removes all the shapes from the supplied nodes.
@@ -691,7 +691,7 @@ class QShapesTab(qabstracttab.QAbstractTab):
             log.info(f'Removing shapes from: {node}')
             node.removeShapes()
 
-    @undo(name='Colorize Shapes')
+    @undo.Undo(name='Colorize Shapes')
     def colorizeShapes(self, *nodes, startColor=None, endColor=None):
         """
         Applies a gradient to the supplied nodes.
@@ -722,7 +722,7 @@ class QShapesTab(qabstracttab.QAbstractTab):
             #
             modifyutils.recolorNodes(node, color=color, colorMode=self.colorMode())
 
-    @undo(name='Rescale Shapes')
+    @undo.Undo(name='Rescale Shapes')
     def rescaleShapes(self, *nodes, percentage=0.0):
         """
         Resizes the supplied shapes along the specified dimension.
@@ -786,7 +786,7 @@ class QShapesTab(qabstracttab.QAbstractTab):
                 controlPoints = [om.MPoint(point) * parentMatrix * pivotMatrix.inverse() * scaleMatrix * pivotMatrix * parentMatrix.inverse() for point in shape.controlPoints()]
                 shape.setControlPoints(controlPoints)
 
-    @undo(name='Resize Helpers')
+    @undo.Undo(name='Resize Helpers')
     def resizeHelpers(self, *nodes, dimension=None, amount=0.0):
         """
         Resizes the supplied shapes along the specified dimension.
@@ -831,7 +831,7 @@ class QShapesTab(qabstracttab.QAbstractTab):
         #
         self.invalidateDimensions()
 
-    @undo(name='Parent Shapes')
+    @undo.Undo(name='Parent Shapes')
     def parentShapes(self, source, target, preservePosition=False):
         """
         Parents the shapes under the source node to the supplied target node.
@@ -902,7 +902,7 @@ class QShapesTab(qabstracttab.QAbstractTab):
 
                     log.warning(f'No support for {shape.apiTypeStr} shapes!')
 
-    @undo(name='Fit Helpers')
+    @undo.Undo(name='Fit Helpers')
     def fitHelpers(self, *nodes):
         """
         Scales the supplied helpers to fit between each node.
@@ -942,7 +942,7 @@ class QShapesTab(qabstracttab.QAbstractTab):
         #
         self.invalidateDimensions()
 
-    @undo(name='Reset Helpers')
+    @undo.Undo(name='Reset Helpers')
     def resetHelpers(self, *nodes):
         """
         Resets the local matrix on the supplied helpers.

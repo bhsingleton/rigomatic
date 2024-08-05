@@ -6,7 +6,7 @@ from Qt import QtCore, QtWidgets, QtGui
 from copy import copy
 from enum import IntEnum
 from dcc.python import stringutils
-from dcc.maya.decorators.undo import undo
+from dcc.maya.decorators import undo
 from dcc.generators.consecutivepairs import consecutivePairs
 from . import qabstracttab
 
@@ -287,7 +287,7 @@ class QRenameTab(qabstracttab.QAbstractTab):
 
             self.typeComboBox.setCurrentIndex(index)
 
-    @undo(name='Rename Nodes')
+    @undo.Undo(name='Rename Nodes')
     def renameNodes(self, nodes, names):
         """
         Renames the supplied nodes with the specified names.

@@ -1,7 +1,7 @@
 from maya.api import OpenMaya as om
 from mpy import mpyscene, mpynode
 from dcc.python import stringutils
-from dcc.maya.decorators.undo import undo
+from dcc.maya.decorators import undo
 from . import kinematicutils
 
 import logging
@@ -10,7 +10,7 @@ log = logging.getLogger(__name__)
 log.setLevel(logging.INFO)
 
 
-@undo(name='Create Node')
+@undo.Undo(name='Create Node')
 def createNode(typeName, **kwargs):
     """
     Returns a new node derived from the specified type.
@@ -65,7 +65,7 @@ def createNode(typeName, **kwargs):
     return node
 
 
-@undo(name='Create Nodes from Selection')
+@undo.Undo(name='Create Nodes from Selection')
 def createNodesFromSelection(typeName, selection, **kwargs):
     """
     Returns a sequence of nodes derived from the active selection.
@@ -130,7 +130,7 @@ def createNodesFromSelection(typeName, selection, **kwargs):
     return nodes
 
 
-@undo(name='Add IK-Solver')
+@undo.Undo(name='Add IK-Solver')
 def addIKSolver(startJoint, endJoint):
     """
     Adds an IK solver to the supplied start and end joints.
@@ -175,7 +175,7 @@ def addIKSolver(startJoint, endJoint):
         kinematicutils.applySpringSolver(startJoint, endJoint)
 
 
-@undo(name='Create Intermediate')
+@undo.Undo(name='Create Intermediate')
 def createIntermediate(*nodes):
     """
     Returns an intermediate parent to the supplied node.

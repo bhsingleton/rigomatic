@@ -2,7 +2,7 @@ from maya.api import OpenMaya as om
 from Qt import QtCore, QtWidgets, QtGui
 from scipy.spatial import cKDTree
 from dcc.maya.libs import plugutils
-from dcc.maya.decorators.undo import undo
+from dcc.maya.decorators import undo
 from . import qabstracttab
 
 import logging
@@ -150,13 +150,13 @@ class QConstraintsTab(qabstracttab.QAbstractTab):
         # Initialize align widgets
         #
         self.translateXYZWidget.setText('Translate')
-        self.translateXYZWidget.setMatches([True, True, True])
+        self.translateXYZWidget.setCheckStates([True, True, True])
 
         self.rotateXYZWidget.setText('Rotate')
-        self.rotateXYZWidget.setMatches([True, True, True])
+        self.rotateXYZWidget.setCheckStates([True, True, True])
 
         self.scaleXYZWidget.setText('Scale')
-        self.scaleXYZWidget.setMatches([False, False, False])
+        self.scaleXYZWidget.setCheckStates([False, False, False])
 
         # Initialize target item model
         #
@@ -215,9 +215,9 @@ class QConstraintsTab(qabstracttab.QAbstractTab):
         :rtype: Dict[str, Any]
         """
 
-        skipTranslate = {f'skipTranslate{axis}': not match for (match, axis) in zip(self.translateXYZWidget.matches(), ('X', 'Y', 'Z'))}
-        skipRotate = {f'skipRotate{axis}': not match for (match, axis) in zip(self.rotateXYZWidget.matches(), ('X', 'Y', 'Z'))}
-        skipScale = {f'skipScale{axis}': not match for (match, axis) in zip(self.scaleXYZWidget.matches(), ('X', 'Y', 'Z'))}
+        skipTranslate = self.translateXYZWidget.flags(prefix='skipTranslate', inverse=True)
+        skipRotate = self.rotateXYZWidget.flags(prefix='skipRotate', inverse=True)
+        skipScale = self.scaleXYZWidget.flags(prefix='skipScale', inverse=True)
         maintainOffset = self.maintainOffset()
 
         return dict(maintainOffset=maintainOffset, **skipTranslate, **skipRotate, **skipScale)
@@ -231,7 +231,7 @@ class QConstraintsTab(qabstracttab.QAbstractTab):
 
         return self.mutePushButton.isChecked()
 
-    @undo(name='Add Constraint')
+    @undo.Undo(name='Add Constraint')
     def addConstraint(self, node, typeName, targets, **kwargs):
         """
         Adds the specified constraint type to the supplied node.
@@ -256,7 +256,7 @@ class QConstraintsTab(qabstracttab.QAbstractTab):
 
             return node.addConstraint(typeName, targets, **kwargs)
 
-    @undo(name='Add Skin Constraint')
+    @undo.Undo(name='Add Skin Constraint')
     def addSkinConstraint(self, node, target, **kwargs):
         """
         Adds a transform constraint to the supplied node.

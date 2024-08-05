@@ -1,6 +1,6 @@
 from maya.api import OpenMaya as om
 from mpy import mpyscene, mpynode
-from dcc.maya.decorators.undo import undo
+from dcc.maya.decorators import undo
 from . import ColorMode
 
 import logging
@@ -9,7 +9,7 @@ log = logging.getLogger(__name__)
 log.setLevel(logging.INFO)
 
 
-@undo(name='Rename Node')
+@undo.Undo(name='Rename Node')
 def renameNode(node, name):
     """
     Renames the supplied node to the specified name.
@@ -31,7 +31,7 @@ def renameNode(node, name):
         return False
 
 
-@undo(name='Renamespace Node')
+@undo.Undo(name='Renamespace Node')
 def renamespaceNodes(*nodes, namespace=''):
     """
     Updates the namespace for the supplied nodes.
@@ -88,7 +88,7 @@ def findWireframeColor(node, colorMode=ColorMode.NONE):
         return dormantColor.r, dormantColor.g, dormantColor.b
 
 
-@undo(name='Recolor Node')
+@undo.Undo(name='Recolor Node')
 def recolorNodes(*nodes, color=(0.0, 0.0, 0.0), colorMode=ColorMode.NONE):
     """
     Recolors the supplied node to the specified color.

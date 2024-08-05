@@ -3,7 +3,7 @@ from maya.api import OpenMaya as om
 from Qt import QtCore, QtWidgets, QtGui
 from dcc.python import stringutils
 from dcc.maya.libs import attributeutils, plugutils, dagutils
-from dcc.maya.decorators.undo import undo
+from dcc.maya.decorators import undo
 from dcc.generators.inclusiverange import inclusiveRange
 from . import qabstracttab
 
@@ -260,7 +260,7 @@ class QAttributesTab(qabstracttab.QAbstractTab):
 
         return definition
 
-    @undo(name='Add Attribute')
+    @undo.Undo(name='Add Attribute')
     def addAttribute(self, node, **kwargs):
         """
         Adds an attribute to the supplied node.
@@ -271,7 +271,7 @@ class QAttributesTab(qabstracttab.QAbstractTab):
 
         node.addAttr(**kwargs)
 
-    @undo(name='Add Proxy Attribute')
+    @undo.Undo(name='Add Proxy Attribute')
     def addProxyAttribute(self, node, name, plug):
         """
         Adds a proxy attribute to the supplied node.
@@ -284,7 +284,7 @@ class QAttributesTab(qabstracttab.QAbstractTab):
 
         node.addProxyAttr(name, plug)
 
-    @undo(name='Edit Attribute')
+    @undo.Undo(name='Edit Attribute')
     def editAttribute(self, node, **kwargs):
         """
         Edits an attribute to the supplied node.

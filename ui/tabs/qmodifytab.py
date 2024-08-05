@@ -1,6 +1,6 @@
 from maya.api import OpenMaya as om
 from Qt import QtCore, QtWidgets, QtGui
-from dcc.maya.decorators.undo import undo
+from dcc.maya.decorators import undo
 from dcc.maya.models import qplugitemmodel, qplugitemfiltermodel, qplugstyleditemdelegate
 from . import qabstracttab
 
@@ -89,24 +89,24 @@ class QModifyTab(qabstracttab.QAbstractTab):
         # Initialize align widgets
         #
         self.translateXYZWidget.setText('Translate')
-        self.translateXYZWidget.setMatches([True, True, True])
+        self.translateXYZWidget.setCheckStates([True, True, True])
 
         self.rotateXYZWidget.setText('Rotate')
-        self.rotateXYZWidget.setMatches([True, True, True])
+        self.rotateXYZWidget.setCheckStates([True, True, True])
 
         self.scaleXYZWidget.setText('Scale')
-        self.scaleXYZWidget.setMatches([False, False, False])
+        self.scaleXYZWidget.setCheckStates([False, False, False])
 
-    def alignments(self):
+    def alignmentFlags(self):
         """
         Returns the alignments flags.
 
         :rtype: Dict[str, bool]
         """
 
-        skipTranslate = {f'skipTranslate{axis}': not match for (match, axis) in zip(self.translateXYZWidget.matches(), ('X', 'Y', 'Z'))}
-        skipRotate = {f'skipRotate{axis}': not match for (match, axis) in zip(self.rotateXYZWidget.matches(), ('X', 'Y', 'Z'))}
-        skipScale = {f'skipScale{axis}': not match for (match, axis) in zip(self.scaleXYZWidget.matches(), ('X', 'Y', 'Z'))}
+        skipTranslate = self.translateXYZWidget.flags(prefix='skipTranslate', inverse=True)
+        skipRotate = self.rotateXYZWidget.flags(prefix='skipRotate', inverse=True)
+        skipScale = self.scaleXYZWidget.flags(prefix='skipScale', inverse=True)
 
         return {**skipTranslate, **skipRotate, **skipScale}
 
@@ -129,7 +129,7 @@ class QModifyTab(qabstracttab.QAbstractTab):
 
         self.preserveShapesCheckBox.setChecked(preserveShapes)
 
-    @undo(name='Align Nodes')
+    @undo.Undo(name='Align Nodes')
     def alignNodes(self, copyFrom, copyTo, **kwargs):
         """
         Aligns the second node to the first node.
@@ -181,7 +181,7 @@ class QModifyTab(qabstracttab.QAbstractTab):
                     log.warning(f'No support for {shape.apiTypeStr} shapes!')
                     continue
 
-    @undo(name='Freeze Parent-Offsets')
+    @undo.Undo(name='Freeze Parent-Offsets')
     def freezePivots(self, *nodes, includeTranslate=True, includeRotate=True, includeScale=False):
         """
         Freezes the pivots on the supplied nodes.
@@ -207,7 +207,7 @@ class QModifyTab(qabstracttab.QAbstractTab):
             #
             node.freezePivots(includeTranslate=includeTranslate, includeRotate=includeRotate, includeScale=includeScale)
 
-    @undo(name='Melt Pivots')
+    @undo.Undo(name='Melt Pivots')
     def meltPivots(self, *nodes):
         """
         Melts the pivots on the supplied nodes.
@@ -230,7 +230,7 @@ class QModifyTab(qabstracttab.QAbstractTab):
             #
             node.unfreezePivots()
 
-    @undo(name='Freeze Parent Offsets')
+    @undo.Undo(name='Freeze Parent Offsets')
     def freezeParentOffsets(self, *nodes, includeTranslate=True, includeRotate=True, includeScale=False):
         """
         Freezes the parent offsets on the supplied nodes.
@@ -256,7 +256,7 @@ class QModifyTab(qabstracttab.QAbstractTab):
             #
             node.freezeTransform(includeTranslate=includeTranslate, includeRotate=includeRotate, includeScale=includeScale)
 
-    @undo(name='Melt Parent Offsets')
+    @undo.Undo(name='Melt Parent Offsets')
     def meltParentOffsets(self, *nodes):
         """
         Melts the parent offsets on the supplied nodes.
@@ -279,7 +279,7 @@ class QModifyTab(qabstracttab.QAbstractTab):
 
                 continue
 
-    @undo(name='Reset Pivots')
+    @undo.Undo(name='Reset Pivots')
     def resetPivots(self, *nodes):
         """
         Resets the pivots on the supplied nodes.
@@ -302,7 +302,7 @@ class QModifyTab(qabstracttab.QAbstractTab):
 
                 continue
 
-    @undo(name='Reset Pre-Rotations')
+    @undo.Undo(name='Reset Pre-Rotations')
     def resetPreRotations(self, *nodes):
         """
         Resets any pre-rotations on the supplied nodes.
@@ -328,7 +328,7 @@ class QModifyTab(qabstracttab.QAbstractTab):
             node.resetPreEulerRotation()
             node.setMatrix(matrix, skipTranslate=True, skipScale=True)
 
-    @undo(name='Zero Transforms')
+    @undo.Undo(name='Zero Transforms')
     def zeroTransforms(self, *nodes):
         """
         Resets the transform matrix on the supplied nodes.
@@ -351,7 +351,7 @@ class QModifyTab(qabstracttab.QAbstractTab):
             #
             node.resetMatrix()
 
-    @undo(name='Sanitize Transforms')
+    @undo.Undo(name='Sanitize Transforms')
     def sanitizeTransforms(self, *nodes):
         """
         Cleans the transform matrix on the supplied nodes.
@@ -432,10 +432,10 @@ class QModifyTab(qabstracttab.QAbstractTab):
 
         if self.selectionCount == 2:
 
-            alignments = self.alignments()
+            alignmentFlags = self.alignmentFlags()
             preserveShapes = self.preserveShapes()
 
-            self.alignNodes(self.selection[0], self.selection[1], preserveShapes=preserveShapes, **alignments)
+            self.alignNodes(self.selection[0], self.selection[1], preserveShapes=preserveShapes, **alignmentFlags)
 
         else:
 
