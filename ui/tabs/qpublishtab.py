@@ -1,7 +1,6 @@
 import os
 import re
 import math
-import clipman
 
 from maya import cmds as mc
 from maya.api import OpenMaya as om
@@ -12,7 +11,10 @@ from dcc.python import stringutils, pathutils
 from dcc.fbx.libs import fbxio
 from dcc.generators.consecutivepairs import consecutivePairs
 from dcc.maya.libs import attributeutils, plugutils, plugmutators
+from dcc.python import importutils
 from . import qabstracttab
+
+clipman = importutils.tryImport('clipman')
 
 import logging
 logging.basicConfig()
@@ -119,6 +121,32 @@ class QPublishTab(qabstracttab.QAbstractTab):
         for checkBox in checkBoxes:
 
             settings.setValue(f'tabs/publish/{checkBox.objectName()}', int(checkBox.isChecked()))
+
+    def setClipboard(self, *commands):
+        """
+        Updates the clipboard with the supplied debug commands.
+
+        :type commands: Union[str, List[str]]
+        :rtype: None
+        """
+
+        # Check if module exists
+        #
+        if clipman is None:
+
+            return
+
+        # Update clipboard
+        #
+        try:
+
+            clipman.init()
+            clipman.set(';\n'.join(commands))
+            self.info('See clipboard for debug commands!')
+
+        except clipman.exceptions.ClipmanBaseException as exception:
+
+            log.warning(exception)
 
     def info(self, text):
         """
@@ -870,15 +898,7 @@ class QPublishTab(qabstracttab.QAbstractTab):
 
         if debugCount > 0:
 
-            try:
-
-                clipman.init()
-                clipman.set(';\n'.join(debugCommands))
-                self.info('See clipboard for debug commands!')
-
-            except clipman.exceptions.ClipmanBaseException as exception:
-
-                log.warning(exception)
+            self.setClipboard(*debugCommands)
             
         # Evaluate errors
         #
