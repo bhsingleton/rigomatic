@@ -229,14 +229,31 @@ class QColorButton(QtWidgets.QPushButton):
     # endregion
 
     # region Methods
-    def color(self):
+    def color(self, asRGB=False, normalize=False):
         """
         Returns the button color.
 
-        :rtype: QtGui.QColor
+        :type asRGB: bool
+        :type normalize: bool
+        :rtype: Union[QtGui.QColor, Tuple[float, float, float]]
         """
 
-        return self.palette().color(QtGui.QPalette.Button)
+        palette = self.palette()
+        color = palette.color(QtGui.QPalette.Button)
+
+        if asRGB:
+
+            if normalize:
+
+                return color.redF(), color.greenF(), color.blueF()
+
+            else:
+
+                return color.red(), color.green(), color.blue()
+
+        else:
+
+            return color
 
     @QtCore.Slot(QtGui.QColor)
     def setColor(self, color):
