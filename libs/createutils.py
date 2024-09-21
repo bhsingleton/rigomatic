@@ -208,6 +208,7 @@ def createIntermediate(*nodes):
         # Re-parent node
         #
         node.setParent(parent)
+        node.unfreezeTransform()
         node.resetMatrix()
 
         intermediates.append(parent)
