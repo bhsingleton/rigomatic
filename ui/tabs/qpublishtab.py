@@ -519,7 +519,7 @@ class QPublishTab(qabstracttab.QAbstractTab):
 
             # Evaluate reference path
             #
-            filePath = reference.filePath()
+            filePath = reference.filePath(resolvedName=False)
 
             if stringutils.isNullOrEmpty(filePath):
 
@@ -640,11 +640,16 @@ class QPublishTab(qabstracttab.QAbstractTab):
             #
             name = node.name(includeNamespace=True)
 
+            isTranslateLocked = any([plug.isLocked for plug in plugutils.iterChildren(node['translate'])])
+            isRotateLocked = any([plug.isLocked for plug in plugutils.iterChildren(node['rotate'])])
+            isScaleLocked = any([plug.isLocked for plug in plugutils.iterChildren(node['scale'])])
+            isTransformLocked = isTranslateLocked and isRotateLocked and isScaleLocked
+
             matrix = node.matrix()
             restMatrix = node.preEulerRotation().asMatrix()
             isIdentity = matrix.isEquivalent(restMatrix, tolerance=1e-3)
 
-            if not isIdentity:
+            if not isIdentity and not isTransformLocked:
 
                 self.warning(f'"{name}" transform has not been zeroed out!')
                 errors.add(node)
@@ -694,7 +699,7 @@ class QPublishTab(qabstracttab.QAbstractTab):
             #
             plug = node['rotateOrder']
 
-            if not plug.isChannelBox:
+            if not plug.isChannelBox and not isRotateLocked:
 
                 self.warning(f'"{name}.rotateOrder" plug is not accessible from the channel-box!')
                 errors.add(node)
