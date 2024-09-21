@@ -4,9 +4,11 @@ from maya import cmds as mc
 from maya.api import OpenMaya as om
 from mpy import mpyscene
 from Qt import QtCore, QtWidgets, QtGui, QtCompat
-from dcc.ui import quicwindow, qsignalblocker
-from dcc.maya.libs import transformutils
+from dcc.ui import qsingletonwindow, qdivider, qsignalblocker
+from dcc.maya.libs import transformutils, pluginutils
 from . import InvalidateReason
+from .tabs import qmodifytab, qrenametab, qshapestab, qattributestab, qspreadsheettab, qconstraintstab, qpublishtab
+from .widgets import qcolorbutton
 from ..libs import createutils, modifyutils, ColorMode
 
 import logging
@@ -67,7 +69,7 @@ def onSceneChanged(*args, **kwargs):
         log.warning('Unable to process scene changed callback!')
 
 
-class QRigomatic(quicwindow.QUicWindow):
+class QRigomatic(qsingletonwindow.QSingletonWindow):
     """
     Overload of `QUicWindow` used to edit rigs.
     """
@@ -101,43 +103,275 @@ class QRigomatic(quicwindow.QUicWindow):
         self._currentColor = (0.0, 0.0, 0.0)
         self._callbackIds = om.MCallbackIdArray()
 
-        # Declare public variables
+    def __setup_ui__(self, *args, **kwargs):
+        """
+        Called after the user interface has been loaded.
+
+        :rtype: None
+        """
+
+        # Call parent method
         #
-        self.mainMenuBar = None
-        self.settingsMenu = None
-        self.nameConfigurationAction = None
-        self.changeNameConfigurationAction = None
-        self.colorModeActionGroup = None
-        self.colorModeSection = None
-        self.wireColorAction = None
-        self.overrideColorAction = None
-        self.helpMenu = None
-        self.usingRigomaticAction = None
+        super(QRigomatic, self).__setup_ui__(*args, **kwargs)
 
-        self.nodeFrame = None
-        self.namespaceComboBox = None
-        self.namespaceLabel = None
-        self.nameLineEdit = None
-        self.nameRegex = None
-        self.nameValidator = None
-        self.wireColorButton = None
-        self.createDivider = None
-        self.createLabel = None
-        self.createLine = None
-        self.transformPushButton = None
-        self.jointPushButton = None
-        self.ikHandlePushButton = None
-        self.locatorPushButton = None
-        self.helperPushButton = None
-        self.intermediatePushButton = None
+        # Initialize main window
+        #
+        self.setWindowTitle("|| Rig o'Matic")
+        self.setMinimumSize(QtCore.QSize(400, 600))
 
-        self.tabControl = None
-        self.modifyTab = None
-        self.renameTab = None
-        self.shapesTab = None
-        self.attributesTab = None
-        self.constraintsTab = None
-        self.publishTab = None
+        # Initialize menu-bar
+        #
+        mainMenuBar = QtWidgets.QMenuBar(self)
+        mainMenuBar.setObjectName('mainMenuBar')
+
+        self.setMenuBar(mainMenuBar)
+
+        # Initialize settings menu
+        #
+        self.settingsMenu = mainMenuBar.addMenu('&Settings')
+        self.settingsMenu.setObjectName('settingsMenu')
+
+        self.nameConfigurationAction = QtWidgets.QAction('Default', parent=self.settingsMenu)
+        self.nameConfigurationAction.setObjectName('nameConfigurationAction')
+        self.nameConfigurationAction.setEnabled(False)
+
+        self.changeNameConfigurationAction = QtWidgets.QAction('Change Name Configuration', parent=self.settingsMenu)
+        self.changeNameConfigurationAction.setObjectName('changeNameConfigurationAction')
+
+        self.colorModeSection = QtWidgets.QAction('Color Mode:', parent=self.settingsMenu)
+        self.colorModeSection.setObjectName('colorSection')
+        self.colorModeSection.setSeparator(True)
+
+        self.wireColorAction = QtWidgets.QAction('Wire Color', parent=self.settingsMenu)
+        self.wireColorAction.setObjectName('wireColorAction')
+        self.wireColorAction.setCheckable(True)
+        self.wireColorAction.setChecked(True)
+        self.wireColorAction.setWhatsThis('WIRE_COLOR_RGB')
+
+        self.overrideColorAction = QtWidgets.QAction('Override Color', parent=self.settingsMenu)
+        self.overrideColorAction.setObjectName('overrideColorAction')
+        self.overrideColorAction.setCheckable(True)
+        self.overrideColorAction.setWhatsThis('OVERRIDE_COLOR_RGB')
+
+        self.colorModeActionGroup = QtWidgets.QActionGroup(self.settingsMenu)
+        self.colorModeActionGroup.setObjectName('colorModeActionGroup')
+        self.colorModeActionGroup.setExclusive(True)
+        self.colorModeActionGroup.addAction(self.wireColorAction)
+        self.colorModeActionGroup.addAction(self.overrideColorAction)
+
+        self.settingsMenu.addActions(
+            [
+                self.nameConfigurationAction,
+                self.changeNameConfigurationAction,
+                self.colorModeSection,
+                self.wireColorAction,
+                self.overrideColorAction
+            ]
+        )
+
+        # Initialize help menu
+        #
+        self.helpMenu = mainMenuBar.addMenu('&Help')
+        self.helpMenu.setObjectName('helpMenu')
+
+        self.usingRigomaticAction = QtWidgets.QAction("Using Rig o'Matic", parent=self.helpMenu)
+        self.usingRigomaticAction.setObjectName('usingRigomaticAction')
+        self.usingRigomaticAction.triggered.connect(self.on_usingRigomaticAction_triggered)
+
+        self.helpMenu.addActions([self.usingRigomaticAction])
+
+        # Initialize central widget
+        #
+        centralLayout = QtWidgets.QVBoxLayout()
+        centralLayout.setObjectName('centralLayout')
+
+        centralWidget = QtWidgets.QWidget()
+        centralWidget.setObjectName('centralWidget')
+        centralWidget.setLayout(centralLayout)
+
+        self.setCentralWidget(centralWidget)
+
+        # Initialize selection frame
+        #
+        self.selectionFrameLayout = QtWidgets.QVBoxLayout()
+        self.selectionFrameLayout.setObjectName('selectionFrameLayout')
+
+        self.selectionFrame = QtWidgets.QFrame(parent=self)
+        self.selectionFrame.setObjectName('nodeFrame')
+        self.selectionFrame.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed))
+        self.selectionFrame.setFrameShape(QtWidgets.QFrame.StyledPanel)
+        self.selectionFrame.setFrameShadow(QtWidgets.QFrame.Sunken)
+        self.selectionFrame.setAutoFillBackground(True)
+        self.selectionFrame.setLayout(self.selectionFrameLayout)
+
+        centralLayout.addWidget(self.selectionFrame)
+
+        # Initialize node name layout
+        #
+        self.namespaceComboBox = QtWidgets.QComboBox()
+        self.namespaceComboBox.setObjectName('namespaceComboBox')
+        self.namespaceComboBox.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed))
+        self.namespaceComboBox.setFixedHeight(24)
+        self.namespaceComboBox.setFocusPolicy(QtCore.Qt.NoFocus)
+        self.namespaceComboBox.currentIndexChanged.connect(self.on_namespaceComboBox_currentIndexChanged)
+
+        self.namespaceLabel = QtWidgets.QLabel(':')
+        self.namespaceLabel.setObjectName('namespaceLabel')
+        self.namespaceLabel.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed))
+        self.namespaceLabel.setFixedSize(QtCore.QSize(12, 24))
+        self.namespaceLabel.setFocusPolicy(QtCore.Qt.NoFocus)
+        self.namespaceLabel.setAlignment(QtCore.Qt.AlignCenter)
+
+        self.nameLineEdit = QtWidgets.QLineEdit()
+        self.nameLineEdit.setObjectName('nameLineEdit')
+        self.nameLineEdit.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed))
+        self.nameLineEdit.setFixedHeight(24)
+        self.nameLineEdit.setFocusPolicy(QtCore.Qt.ClickFocus)
+        self.nameLineEdit.textChanged.connect(self.on_nameLineEdit_textChanged)
+
+        self.wireColorButton = qcolorbutton.QColorButton()
+        self.wireColorButton.setObjectName('wireColorButton')
+        self.wireColorButton.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed))
+        self.wireColorButton.setFixedSize(QtCore.QSize(24, 24))
+        self.wireColorButton.setFocusPolicy(QtCore.Qt.NoFocus)
+        self.wireColorButton.clicked.connect(self.on_wireColorButton_clicked)
+        self.wireColorButton.colorChanged.connect(self.on_wireColorButton_colorChanged)
+
+        self.nodeNameLayout = QtWidgets.QHBoxLayout()
+        self.nodeNameLayout.setObjectName('nodeNameLayout')
+        self.nodeNameLayout.setContentsMargins(0, 0, 0, 0)
+        self.nodeNameLayout.addWidget(self.namespaceComboBox)
+        self.nodeNameLayout.addWidget(self.namespaceLabel)
+        self.nodeNameLayout.addWidget(self.nameLineEdit)
+        self.nodeNameLayout.addWidget(self.wireColorButton)
+
+        self.selectionFrameLayout.addLayout(self.nodeNameLayout)
+
+        # Initialize node name validator
+        #
+        self.nameRegex = QtCore.QRegExp(r'^[a-zA-Z0-9_]+$')
+        self.nameValidator = QtGui.QRegExpValidator(self.nameRegex, parent=self.selectionFrame)
+        self.nameValidator.setObjectName('nameValidator')
+
+        self.nameLineEdit.setValidator(self.nameValidator)
+
+        # Initialize create divider
+        #
+        self.createDividerLayout = QtWidgets.QHBoxLayout()
+        self.createDividerLayout.setObjectName('createDividerLayout')
+        self.createDividerLayout.setContentsMargins(0, 0, 0, 0)
+
+        self.createDivider = QtWidgets.QWidget()
+        self.createDivider.setObjectName('createDivider')
+        self.createDivider.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed))
+        self.createDivider.setFocusPolicy(QtCore.Qt.NoFocus)
+        self.createDivider.setLayout(self.createDividerLayout)
+
+        self.createLabel = QtWidgets.QLabel('Create:')
+        self.createLabel.setObjectName('createLabel')
+        self.createLabel.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Preferred))
+        self.createLabel.setFocusPolicy(QtCore.Qt.NoFocus)
+
+        self.createLine = qdivider.QDivider(QtCore.Qt.Horizontal)
+        self.createLine.setObjectName('createLine')
+        self.createLine.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Preferred))
+        self.createLine.setFocusPolicy(QtCore.Qt.NoFocus)
+
+        self.createDividerLayout.addWidget(self.createLabel)
+        self.createDividerLayout.addWidget(self.createLine)
+
+        self.selectionFrameLayout.addWidget(self.createDivider)
+
+        # Initialize create node layout
+        #
+        self.transformPushButton = QtWidgets.QPushButton('Transform')
+        self.transformPushButton.setObjectName('transformPushButton')
+        self.transformPushButton.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed))
+        self.transformPushButton.setFixedHeight(24)
+        self.transformPushButton.setFocusPolicy(QtCore.Qt.NoFocus)
+        self.transformPushButton.setWhatsThis('transform')
+        self.transformPushButton.clicked.connect(self.on_transformPushButton_clicked)
+
+        self.jointPushButton = QtWidgets.QPushButton('Joint')
+        self.jointPushButton.setObjectName('jointPushButton')
+        self.jointPushButton.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed))
+        self.jointPushButton.setFixedHeight(24)
+        self.jointPushButton.setFocusPolicy(QtCore.Qt.NoFocus)
+        self.jointPushButton.setWhatsThis('joint')
+        self.jointPushButton.clicked.connect(self.on_jointPushButton_clicked)
+
+        self.ikHandlePushButton = QtWidgets.QPushButton('IK-Handle')
+        self.ikHandlePushButton.setObjectName('ikHandlePushButton')
+        self.ikHandlePushButton.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed))
+        self.ikHandlePushButton.setFixedHeight(24)
+        self.ikHandlePushButton.setFocusPolicy(QtCore.Qt.NoFocus)
+        self.ikHandlePushButton.setWhatsThis('ikHandle')
+        self.ikHandlePushButton.clicked.connect(self.on_ikHandlePushButton_clicked)
+
+        self.locatorPushButton = QtWidgets.QPushButton('Locator')
+        self.locatorPushButton.setObjectName('locatorPushButton')
+        self.locatorPushButton.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed))
+        self.locatorPushButton.setFixedHeight(24)
+        self.locatorPushButton.setFocusPolicy(QtCore.Qt.NoFocus)
+        self.locatorPushButton.setWhatsThis('locator')
+        self.locatorPushButton.clicked.connect(self.on_locatorPushButton_clicked)
+
+        self.helperPushButton = QtWidgets.QPushButton('Helper')
+        self.helperPushButton.setObjectName('helperPushButton')
+        self.helperPushButton.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed))
+        self.helperPushButton.setFixedHeight(24)
+        self.helperPushButton.setFocusPolicy(QtCore.Qt.NoFocus)
+        self.helperPushButton.setWhatsThis('pointHelper')
+        self.helperPushButton.clicked.connect(self.on_helperPushButton_clicked)
+
+        self.intermediatePushButton = QtWidgets.QPushButton('Intermediate')
+        self.intermediatePushButton.setObjectName('intermediatePushButton')
+        self.intermediatePushButton.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed))
+        self.intermediatePushButton.setFixedHeight(24)
+        self.intermediatePushButton.setFocusPolicy(QtCore.Qt.NoFocus)
+        self.intermediatePushButton.setWhatsThis('intermediate')
+        self.intermediatePushButton.clicked.connect(self.on_intermediatePushButton_clicked)
+        
+        self.createNodeLayout = QtWidgets.QGridLayout()
+        self.createNodeLayout.setObjectName('createNodeLayout')
+        self.createNodeLayout.setContentsMargins(0, 0, 0, 0)
+        self.createNodeLayout.addWidget(self.transformPushButton, 0, 0)
+        self.createNodeLayout.addWidget(self.jointPushButton, 0, 1)
+        self.createNodeLayout.addWidget(self.ikHandlePushButton, 0, 2)
+        self.createNodeLayout.addWidget(self.locatorPushButton, 1, 0)
+        self.createNodeLayout.addWidget(self.helperPushButton, 1, 1)
+        self.createNodeLayout.addWidget(self.intermediatePushButton, 1, 2)
+
+        self.selectionFrameLayout.addLayout(self.createNodeLayout)
+
+        # Initialize tab control
+        #
+        self.tabControl = QtWidgets.QTabWidget(parent=self)
+        self.tabControl.setObjectName('tabControl')
+        self.tabControl.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding))
+        self.tabControl.setFocusPolicy(QtCore.Qt.NoFocus)
+        self.tabControl.setTabPosition(QtWidgets.QTabWidget.West)
+        self.tabControl.setTabShape(QtWidgets.QTabWidget.Rounded)
+
+        self.modifyTab = qmodifytab.QModifyTab(parent=self.tabControl)
+        self.renameTab = qrenametab.QRenameTab(parent=self.tabControl)
+        self.shapesTab = qshapestab.QShapesTab(parent=self.tabControl)
+        self.attributesTab = qattributestab.QAttributesTab(parent=self.tabControl)
+        self.constraintsTab = qconstraintstab.QConstraintsTab(parent=self.tabControl)
+        self.publishTab = qpublishtab.QPublishTab(parent=self.tabControl)
+
+        self.tabControl.addTab(self.modifyTab, 'Modify')
+        self.tabControl.addTab(self.renameTab, 'Rename')
+        self.tabControl.addTab(self.shapesTab, 'Shapes')
+        self.tabControl.addTab(self.attributesTab, 'Attributes')
+        self.tabControl.addTab(self.constraintsTab, 'Constraints')
+        self.tabControl.addTab(self.publishTab, 'Publish')
+
+        centralLayout.addWidget(self.tabControl)
+
+        # Invalidate namespaces
+        #
+        self.invalidateNamespaces()
     # endregion
 
     # region Properties
@@ -206,22 +440,17 @@ class QRigomatic(quicwindow.QUicWindow):
         self.currentTab().invalidate(reason=self.InvalidateReason.SELECTION_CHANGED)
     # endregion
 
-    # region Events
-    def showEvent(self, event):
+    # region Methods
+    def addCallbacks(self):
         """
-        Event method called after the window has been shown.
+        Adds any callbacks required by this window.
 
-        :type event: QtGui.QShowEvent
         :rtype: None
         """
 
         # Call parent method
         #
-        super(QRigomatic, self).showEvent(event)
-
-        # Load required plugins
-        #
-        self.loadPlugins()
+        super(QRigomatic, self).addCallbacks()
 
         # Add callbacks
         #
@@ -242,17 +471,16 @@ class QRigomatic(quicwindow.QUicWindow):
         #
         self.selectionChanged()
 
-    def closeEvent(self, event):
+    def removeCallbacks(self):
         """
-        Event method called after the window has been closed.
+        Removes any callbacks created by this window.
 
-        :type event: QtGui.QCloseEvent
         :rtype: None
         """
 
         # Call parent method
         #
-        super(QRigomatic, self).closeEvent(event)
+        super(QRigomatic, self).removeCallbacks()
 
         # Remove callbacks
         #
@@ -262,79 +490,6 @@ class QRigomatic(quicwindow.QUicWindow):
 
             om.MMessage.removeCallbacks(self._callbackIds)
             self._callbackIds.clear()
-    # endregion
-
-    # region Methods
-    def postLoad(self, *args, **kwargs):
-        """
-        Called after the user interface has been loaded.
-
-        :rtype: None
-        """
-
-        # Call parent method
-        #
-        super(QRigomatic, self).postLoad(*args, **kwargs)
-
-        # Initialize settings menu
-        #
-        self.nameConfigurationAction = QtWidgets.QAction('Default', parent=self.settingsMenu)
-        self.nameConfigurationAction.setObjectName('nameConfigurationAction')
-        self.nameConfigurationAction.setEnabled(False)
-
-        self.changeNameConfigurationAction = QtWidgets.QAction('Change Name Configuration', parent=self.settingsMenu)
-        self.changeNameConfigurationAction.setObjectName('changeNameConfigurationAction')
-
-        self.colorModeSection = QtWidgets.QAction('Color Mode:', parent=self.settingsMenu)
-        self.colorModeSection.setObjectName('colorSection')
-        self.colorModeSection.setSeparator(True)
-
-        self.wireColorAction = QtWidgets.QAction('Wire Color', parent=self.settingsMenu)
-        self.wireColorAction.setObjectName('wireColorAction')
-        self.wireColorAction.setCheckable(True)
-        self.wireColorAction.setChecked(True)
-        self.wireColorAction.setWhatsThis('WIRE_COLOR_RGB')
-
-        self.overrideColorAction = QtWidgets.QAction('Override Color', parent=self.settingsMenu)
-        self.overrideColorAction.setObjectName('overrideColorAction')
-        self.overrideColorAction.setCheckable(True)
-        self.overrideColorAction.setWhatsThis('OVERRIDE_COLOR_RGB')
-
-        self.colorModeActionGroup = QtWidgets.QActionGroup(self.settingsMenu)
-        self.colorModeActionGroup.setObjectName('colorModeActionGroup')
-        self.colorModeActionGroup.setExclusive(True)
-        self.colorModeActionGroup.addAction(self.wireColorAction)
-        self.colorModeActionGroup.addAction(self.overrideColorAction)
-
-        self.settingsMenu.addActions(
-            [
-                self.nameConfigurationAction,
-                self.changeNameConfigurationAction,
-                self.colorModeSection,
-                self.wireColorAction,
-                self.overrideColorAction
-            ]
-        )
-
-        # Initialize help menu
-        #
-        self.usingRigomaticAction = QtWidgets.QAction("Using Rig o'Matic", parent=self.helpMenu)
-        self.usingRigomaticAction.setObjectName('usingRigomaticAction')
-        self.usingRigomaticAction.triggered.connect(self.on_usingRigomaticAction_triggered)
-
-        self.helpMenu.addActions([self.usingRigomaticAction])
-
-        # Initialize name validator
-        #
-        self.nameRegex = QtCore.QRegExp(r'^[a-zA-Z0-9_]+$')
-        self.nameValidator = QtGui.QRegExpValidator(self.nameRegex, parent=self.nodeFrame)
-        self.nameValidator.setObjectName('nameValidator')
-
-        self.nameLineEdit.setValidator(self.nameValidator)
-
-        # Invalidate namespaces
-        #
-        self.invalidateNamespaces()
 
     def loadSettings(self, settings):
         """
@@ -350,11 +505,12 @@ class QRigomatic(quicwindow.QUicWindow):
 
         # Load user preferences
         #
-        color = settings.value('editor/color', defaultValue=QtGui.QColor(0, 0, 0))
+        defaultColor = QtGui.QColor(0.0, 0.0, 0.0)
+        color = settings.value('editor/color', defaultValue=defaultColor)
         self._currentColor = (color.redF(), color.greenF(), color.blue())
 
         self.setColorMode(settings.value('editor/colorMode', defaultValue=2, type=int))
-        self.setCurrentTabIndex(settings.value('editor/currentTabIndex', defaultValue=0, type=int))
+        self.tabControl.setCurrentIndex(settings.value('editor/currentTabIndex', defaultValue=0, type=int))
 
         # Load tab settings
         #
@@ -376,8 +532,8 @@ class QRigomatic(quicwindow.QUicWindow):
 
         # Save user preferences
         #
-        settings.setValue('editor/color', QtGui.QColor.fromRgbF(*self._currentColor))
         settings.setValue('editor/colorMode', int(self.colorMode()))
+        settings.setValue('editor/currentColor', QtGui.QColor.fromRgbF(*self._currentColor))
         settings.setValue('editor/currentTabIndex', self.currentTabIndex())
 
         # Save tab settings
@@ -385,32 +541,6 @@ class QRigomatic(quicwindow.QUicWindow):
         for tab in self.iterTabs():
 
             tab.saveSettings(settings)
-
-    @staticmethod
-    def getPluginExtension():
-        """
-        Returns the plugin file extension based on the user's operating system.
-
-        :rtype: str
-        """
-
-        # Check system type
-        #
-        if mc.about(windows=True) or mc.about(win64=True):
-
-            return 'mll'
-
-        elif mc.about(macOS=True) or mc.about(macOSx86=True):
-
-            return 'bundle'
-
-        elif mc.about(linux=True) or mc.about(linxx64=True):
-
-            return 'so'
-
-        else:
-
-            raise NotImplementedError()
 
     @classmethod
     def loadPlugins(cls):
@@ -420,33 +550,11 @@ class QRigomatic(quicwindow.QUicWindow):
         :rtype: None
         """
 
-        # Iterate through required plugins
-        #
         log.info('Loading required plugins...')
-        extension = cls.getPluginExtension()
 
         for plugin in cls.__plugins__:
 
-            # Check if plugin has been loaded
-            #
-            filename = '{plugin}.{extension}'.format(plugin=plugin, extension=extension)
-
-            if mc.pluginInfo(filename, query=True, loaded=True):
-
-                log.info(f'"{filename}" plugin has already been loaded.')
-                continue
-
-            # Shit goes wrong, so try to load them...
-            #
-            try:
-
-                log.info(f'Loading "{filename}" plugin...')
-                mc.loadPlugin(filename)
-
-            except RuntimeError as exception:
-
-                log.error(exception)
-                continue
+            pluginutils.tryLoadPlugin(plugin)
 
     def currentName(self):
         """
@@ -464,8 +572,7 @@ class QRigomatic(quicwindow.QUicWindow):
         :rtype: Tuple[float, float, float]
         """
 
-        color = self.wireColorButton.color()
-        return color.redF(), color.greenF(), color.blueF()
+        return self.wireColorButton.color(asRGB=True, normalize=True)
 
     def colorMode(self):
         """
@@ -484,21 +591,19 @@ class QRigomatic(quicwindow.QUicWindow):
         :rtype: None
         """
 
-        if isinstance(colorMode, int):
+        colorMode = ColorMode(colorMode)
+        colorModeName = colorMode.name
 
-            colorMode = ColorMode(colorMode)
-            colorModeName = colorMode.name
+        for action in self.colorModeActionGroup.actions():
 
-            for action in self.colorModeActionGroup.actions():
+            if action.whatsThis() == colorModeName:
 
-                if action.whatsThis() == colorModeName:
+                action.setChecked(True)
+                break
 
-                    action.setChecked(True)
-                    break
+            else:
 
-                else:
-
-                    continue
+                continue
 
     def wireColor(self):
         """
@@ -507,10 +612,7 @@ class QRigomatic(quicwindow.QUicWindow):
         :rtype: Tuple[float, float, float]
         """
 
-        color = self.wireColorButton.color()
-        red, green, blue = color.redF(), color.greenF(), color.blueF()
-
-        return (red, green, blue)
+        return self.wireColorButton.color(asRGB=True, normalize=True)
 
     def selectionPivot(self):
         """
@@ -597,24 +699,12 @@ class QRigomatic(quicwindow.QUicWindow):
 
     def currentTabIndex(self):
         """
-        Returns the active tab index.
+        Returns the tab index that currently open.
 
         :rtype: int
         """
 
         return self.tabControl.currentIndex()
-
-    def setCurrentTabIndex(self, currentIndex):
-        """
-        Updates the active tab index.
-
-        :type currentIndex: int
-        :rtype: None
-        """
-
-        if isinstance(currentIndex, int):
-
-            self.tabControl.setCurrentIndex(currentIndex)
 
     def iterTabs(self):
         """
