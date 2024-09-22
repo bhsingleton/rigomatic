@@ -105,6 +105,8 @@ class QSpreadsheetTab(qabstracttab.QAbstractTab):
         self.editPushButton.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed))
         self.editPushButton.setFixedHeight(24)
         self.editPushButton.setFocusPolicy(QtCore.Qt.NoFocus)
+        self.editPushButton.setStyleSheet('QPushButton:hover:checked { background-color: crimson; }\nQPushButton:checked { background-color: firebrick; border: none; }')
+        self.editPushButton.setCheckable(True)
         self.editPushButton.clicked.connect(self.on_editPushButton_clicked)
 
         self.filterLineEdit = QtWidgets.QLineEdit()

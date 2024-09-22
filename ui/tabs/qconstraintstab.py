@@ -205,6 +205,8 @@ class QConstraintsTab(qabstracttab.QAbstractTab):
         self.editPushButton.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed))
         self.editPushButton.setFixedHeight(24)
         self.editPushButton.setFocusPolicy(QtCore.Qt.NoFocus)
+        self.editPushButton.setStyleSheet('QPushButton:hover:checked { background-color: crimson; }\nQPushButton:checked { background-color: firebrick; border: none; }')
+        self.editPushButton.setCheckable(True)
         self.editPushButton.clicked.connect(self.on_editPushButton_clicked)
 
         self.constraintComboBox = QtWidgets.QComboBox()
@@ -314,6 +316,7 @@ class QConstraintsTab(qabstracttab.QAbstractTab):
         self.mutePushButton.setFixedHeight(24)
         self.mutePushButton.setFocusPolicy(QtCore.Qt.NoFocus)
         self.mutePushButton.setStyleSheet('QPushButton:hover:checked { background-color: crimson; }\nQPushButton:checked { background-color: firebrick; border: none; }')
+        self.mutePushButton.setCheckable(True)
         self.mutePushButton.clicked.connect(self.on_mutePushButton_clicked)
 
         self.updateOffsetsPushButton = QtWidgets.QPushButton('Remove Target')
