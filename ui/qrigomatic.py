@@ -120,7 +120,7 @@ class QRigomatic(qsingletonwindow.QSingletonWindow):
 
         # Initialize main window
         #
-        self.setWindowTitle("|| Rig o'Matic")
+        self.setWindowTitle("|| Rig o'Matic (Toolkit)")
         self.setMinimumSize(QtCore.QSize(400, 600))
 
         # Initialize menu-bar
