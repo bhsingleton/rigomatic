@@ -196,7 +196,7 @@ class QConstraintsTab(qabstracttab.QAbstractTab):
 
         self.targetsGroupBox = QtWidgets.QGroupBox('Targets:')
         self.targetsGroupBox.setObjectName('targetsGroupBox')
-        self.targetsGroupBox.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed))
+        self.targetsGroupBox.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding))
         self.targetsGroupBox.setFocusPolicy(QtCore.Qt.NoFocus)
         self.targetsGroupBox.setLayout(self.targetsLayout)
         
