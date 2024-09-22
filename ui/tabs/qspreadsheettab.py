@@ -192,10 +192,6 @@ class QSpreadsheetTab(qabstracttab.QAbstractTab):
 
             self.attributeItemModel.invisibleRootItem = om.MObjectHandle()
 
-        # Resize columns
-        #
-        self.attributeTreeView.resizeColumnToContents(0)
-
     def invalidate(self, reason=None):
         """
         Refreshes the user interface.
