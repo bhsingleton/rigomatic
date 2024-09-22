@@ -7,11 +7,11 @@ from maya.api import OpenMaya as om
 from Qt import QtCore, QtWidgets, QtGui
 from collections import defaultdict
 from scipy.spatial import cKDTree
-from dcc.python import stringutils, pathutils
+from dcc.ui import qdivider
+from dcc.python import stringutils, pathutils, importutils
 from dcc.fbx.libs import fbxio
 from dcc.generators.consecutivepairs import consecutivePairs
 from dcc.maya.libs import attributeutils, plugutils, plugmutators
-from dcc.python import importutils
 from . import qabstracttab
 
 clipman = importutils.tryImport('clipman')
@@ -53,20 +53,142 @@ class QPublishTab(qabstracttab.QAbstractTab):
         self._staticMeshErrors = []
         self._skeletalMeshErrors = []
 
+    def __setup_ui__(self, *args, **kwargs):
+        """
+        Private method that initializes the user interface.
+
+        :rtype: None
+        """
+
+        # Call parent method
+        #
+        super(QPublishTab, self).__setup_ui__(*args, **kwargs)
+
+        # Initialize central layout
+        #
+        centralLayout = QtWidgets.QVBoxLayout()
+        centralLayout.setObjectName('centralLayout')
+
+        self.setLayout(centralLayout)
+
         # Declare public variables
         #
-        self.logTextEdit = None  # type: QtWidgets:QTextEdit
-        self.interopWidget = None
-        self.sceneSettingsCheckBox = None
-        self.fbxSettingsCheckBox = None
-        self.texturePathsCheckBox = None
-        self.nonUniqueNamesCheckBox = None
-        self.animatableNodesCheckBox = None
-        self.referencePathsCheckBox = None
-        self.staticMeshesCheckBox = None
-        self.skeletalMeshesCheckBox = None
-        self.checkPushButton = None
-        self.fixPushButton = None
+        self.logTextEdit = QtWidgets.QTextEdit()
+        self.logTextEdit.setObjectName('logTextEdit')
+        self.logTextEdit.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding))
+        self.logTextEdit.setFocusPolicy(QtCore.Qt.ClickFocus)
+        self.logTextEdit.setReadOnly(True)
+
+        centralLayout.addWidget(self.logTextEdit)
+
+        # Initialize options layout
+        #
+        self.sceneSettingsCheckBox = QtWidgets.QCheckBox('Scene Settings')
+        self.sceneSettingsCheckBox.setObjectName('sceneSettingsCheckBox')
+        self.sceneSettingsCheckBox.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed))
+        self.sceneSettingsCheckBox.setFixedHeight(24)
+        self.sceneSettingsCheckBox.setFocusPolicy(QtCore.Qt.NoFocus)
+        self.sceneSettingsCheckBox.setChecked(True)
+
+        self.fbxSettingsCheckBox = QtWidgets.QCheckBox('FBX Settings')
+        self.fbxSettingsCheckBox.setObjectName('fbxSettingsCheckBox')
+        self.fbxSettingsCheckBox.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed))
+        self.fbxSettingsCheckBox.setFixedHeight(24)
+        self.fbxSettingsCheckBox.setFocusPolicy(QtCore.Qt.NoFocus)
+        self.fbxSettingsCheckBox.setChecked(True)
+
+        self.texturePathsCheckBox = QtWidgets.QCheckBox('Texture Paths')
+        self.texturePathsCheckBox.setObjectName('texturePathsCheckBox')
+        self.texturePathsCheckBox.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed))
+        self.texturePathsCheckBox.setFixedHeight(24)
+        self.texturePathsCheckBox.setFocusPolicy(QtCore.Qt.NoFocus)
+        self.texturePathsCheckBox.setChecked(True)
+
+        self.nonUniqueNamesCheckBox = QtWidgets.QCheckBox('Non-Unique Names')
+        self.nonUniqueNamesCheckBox.setObjectName('nonUniqueNamesCheckBox')
+        self.nonUniqueNamesCheckBox.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed))
+        self.nonUniqueNamesCheckBox.setFixedHeight(24)
+        self.nonUniqueNamesCheckBox.setFocusPolicy(QtCore.Qt.NoFocus)
+        self.nonUniqueNamesCheckBox.setChecked(True)
+
+        self.animatableNodesCheckBox = QtWidgets.QCheckBox('Animatable Nodes')
+        self.animatableNodesCheckBox.setObjectName('animatableNodesCheckBox')
+        self.animatableNodesCheckBox.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed))
+        self.animatableNodesCheckBox.setFixedHeight(24)
+        self.animatableNodesCheckBox.setFocusPolicy(QtCore.Qt.NoFocus)
+        self.animatableNodesCheckBox.setChecked(True)
+
+        self.referencePathsCheckBox = QtWidgets.QCheckBox('Reference Paths')
+        self.referencePathsCheckBox.setObjectName('referencePathsCheckBox')
+        self.referencePathsCheckBox.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed))
+        self.referencePathsCheckBox.setFixedHeight(24)
+        self.referencePathsCheckBox.setFocusPolicy(QtCore.Qt.NoFocus)
+        self.referencePathsCheckBox.setChecked(True)
+
+        self.staticMeshesCheckBox = QtWidgets.QCheckBox('Static Meshes')
+        self.staticMeshesCheckBox.setObjectName('staticMeshesCheckBox')
+        self.staticMeshesCheckBox.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed))
+        self.staticMeshesCheckBox.setFixedHeight(24)
+        self.staticMeshesCheckBox.setFocusPolicy(QtCore.Qt.NoFocus)
+        self.staticMeshesCheckBox.setChecked(True)
+
+        self.skeletalMeshesCheckBox = QtWidgets.QCheckBox('Skeletal Meshes')
+        self.skeletalMeshesCheckBox.setObjectName('skeletalMeshesCheckBox')
+        self.skeletalMeshesCheckBox.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed))
+        self.skeletalMeshesCheckBox.setFixedHeight(24)
+        self.skeletalMeshesCheckBox.setFocusPolicy(QtCore.Qt.NoFocus)
+        self.skeletalMeshesCheckBox.setChecked(True)
+
+        self.optionsButtonGroup = QtWidgets.QButtonGroup(parent=self)
+        self.optionsButtonGroup.setObjectName('')
+        self.optionsButtonGroup.setExclusive(False)
+        self.optionsButtonGroup.addButton(self.sceneSettingsCheckBox, id=0)
+        self.optionsButtonGroup.addButton(self.fbxSettingsCheckBox, id=1)
+        self.optionsButtonGroup.addButton(self.texturePathsCheckBox, id=2)
+        self.optionsButtonGroup.addButton(self.referencePathsCheckBox, id=3)
+        self.optionsButtonGroup.addButton(self.nonUniqueNamesCheckBox, id=4)
+        self.optionsButtonGroup.addButton(self.animatableNodesCheckBox, id=5)
+        self.optionsButtonGroup.addButton(self.staticMeshesCheckBox, id=6)
+        self.optionsButtonGroup.addButton(self.skeletalMeshesCheckBox, id=7)
+
+        self.optionsLayout = QtWidgets.QGridLayout()
+        self.optionsLayout.setObjectName('optionsLayout')
+        self.optionsLayout.setContentsMargins(0, 0, 0, 0)
+        self.optionsLayout.addWidget(self.sceneSettingsCheckBox, 0, 0)
+        self.optionsLayout.addWidget(self.fbxSettingsCheckBox, 0, 1)
+        self.optionsLayout.addWidget(self.texturePathsCheckBox, 1, 0)
+        self.optionsLayout.addWidget(self.nonUniqueNamesCheckBox, 1, 1)
+        self.optionsLayout.addWidget(self.animatableNodesCheckBox, 2, 0)
+        self.optionsLayout.addWidget(self.referencePathsCheckBox, 2, 1)
+        self.optionsLayout.addWidget(self.staticMeshesCheckBox, 3, 0)
+        self.optionsLayout.addWidget(self.skeletalMeshesCheckBox, 3, 1)
+
+        centralLayout.addLayout(self.optionsLayout)
+
+        # Initialize buttons layout
+        #
+        self.checkPushButton = QtWidgets.QPushButton('Check')
+        self.checkPushButton.setObjectName('checkPushButton')
+        self.checkPushButton.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed))
+        self.checkPushButton.setFixedHeight(24)
+        self.checkPushButton.setFocusPolicy(QtCore.Qt.NoFocus)
+        self.checkPushButton.clicked.connect(self.on_checkPushButton_clicked)
+
+        self.fixPushButton = QtWidgets.QPushButton('Fix')
+        self.fixPushButton.setObjectName('fixPushButton')
+        self.fixPushButton.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed))
+        self.fixPushButton.setFixedHeight(24)
+        self.fixPushButton.setFocusPolicy(QtCore.Qt.NoFocus)
+        self.fixPushButton.clicked.connect(self.on_fixPushButton_clicked)
+
+        self.buttonsLayout = QtWidgets.QGridLayout()
+        self.buttonsLayout.setObjectName('buttonsLayout')
+        self.buttonsLayout.setContentsMargins(0, 0, 0, 0)
+        self.buttonsLayout.addWidget(self.checkPushButton, 0, 0)
+        self.buttonsLayout.addWidget(self.fixPushButton, 0, 1)
+
+        centralLayout.addWidget(qdivider.QDivider(QtCore.Qt.Horizontal))
+        centralLayout.addLayout(self.buttonsLayout)
     # endregion
 
     # region Properties
@@ -96,7 +218,7 @@ class QPublishTab(qabstracttab.QAbstractTab):
 
         # Load check box settings
         #
-        checkBoxes = self.interopWidget.findChildren(QtWidgets.QCheckBox)
+        checkBoxes = self.optionsButtonGroup.buttons()
 
         for checkBox in checkBoxes:
 
@@ -116,7 +238,7 @@ class QPublishTab(qabstracttab.QAbstractTab):
 
         # Save check box settings
         #
-        checkBoxes = self.interopWidget.findChildren(QtWidgets.QCheckBox)
+        checkBoxes = self.optionsButtonGroup.buttons()
 
         for checkBox in checkBoxes:
 

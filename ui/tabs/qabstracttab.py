@@ -1,5 +1,6 @@
-from maya.api import OpenMaya as om
-from dcc.ui import quicwidget
+from Qt import QtCore, QtWidgets, QtGui
+from abc import abstractmethod
+from dcc.ui.abstract import qabcmeta
 from .. import InvalidateReason
 
 import logging
@@ -8,13 +9,52 @@ log = logging.getLogger(__name__)
 log.setLevel(logging.INFO)
 
 
-class QAbstractTab(quicwidget.QUicWidget):
+class QAbstractTab(QtWidgets.QWidget, metaclass=qabcmeta.QABCMeta):
     """
-    Overload of `QUicWidget` that outlines tab behaviour.
+    Overload of `QWidget` that outlines tab behaviour.
     """
 
     # region Enums
     InvalidateReason = InvalidateReason
+    # endregion
+
+    # region Dunderscores
+    def __init__(self, *args, **kwargs):
+        """
+        Private method called after a new instance has been created.
+
+        :key parent: QtWidgets.QWidget
+        :key f: QtCore.Qt.WindowFlags
+        :rtype: None
+        """
+
+        # Call parent method
+        #
+        parent = kwargs.get('parent', None)
+        f = kwargs.get('f', QtCore.Qt.WindowFlags())
+
+        super(QAbstractTab, self).__init__(parent=parent, f=f)
+
+    def __post_init__(self, *args, **kwargs):
+        """
+        Private method called after an instance has initialized.
+
+        :rtype: None
+        """
+
+        # Setup user interface
+        #
+        self.__setup_ui__(*args, **kwargs)
+
+    @abstractmethod
+    def __setup_ui__(self, *args, **kwargs):
+        """
+        Private method that initializes the user interface.
+
+        :rtype: None
+        """
+
+        pass
     # endregion
 
     # region Properties

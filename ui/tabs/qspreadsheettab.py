@@ -32,17 +32,107 @@ class QSpreadsheetTab(qabstracttab.QAbstractTab):
         #
         self._currentNode = None
 
-        # Declare public variables
+    def __setup_ui__(self, *args, **kwargs):
+        """
+        Private method that initializes the user interface.
+
+        :rtype: None
+        """
+
+        # Call parent method
         #
-        self.attributesGroupBox = None
-        self.editPushButton = None
-        self.filterWidget = None
-        self.filterLineEdit = None
-        self.userDefinedCheckBox = None
-        self.attributeTreeView = None
-        self.attributeItemModel = None
-        self.attributeItemFilterModel = None
-        self.attributeStyledItemDelegate = None
+        super(QSpreadsheetTab, self).__setup_ui__(*args, **kwargs)
+
+        # Initialize central layout
+        #
+        centralLayout = QtWidgets.QVBoxLayout()
+        centralLayout.setObjectName('centralLayout')
+
+        self.setLayout(centralLayout)
+
+        # Initialize attributes group-box
+        #
+        self.attributesLayout = QtWidgets.QVBoxLayout()
+        self.attributesLayout.setObjectName('attributesLayout')
+
+        self.attributesGroupBox = QtWidgets.QGroupBox('Attributes:')
+        self.attributesGroupBox.setObjectName('attributesGroupBox')
+        self.attributesGroupBox.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding))
+        self.attributesGroupBox.setFocusPolicy(QtCore.Qt.NoFocus)
+        self.attributesGroupBox.setLayout(self.attributesLayout)
+
+        self.attributeTreeView = QtWidgets.QTreeView()
+        self.attributeTreeView.setObjectName('attributeTreeView')
+        self.attributeTreeView.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding))
+        self.attributeTreeView.setFocusPolicy(QtCore.Qt.ClickFocus)
+        self.attributeTreeView.setMouseTracking(True)
+        self.attributeTreeView.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+        self.attributeTreeView.setStyleSheet('QTreeView::item { height: 24px; }')
+        self.attributeTreeView.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
+        self.attributeTreeView.setEditTriggers(QtWidgets.QAbstractItemView.DoubleClicked | QtWidgets.QAbstractItemView.EditKeyPressed)
+        self.attributeTreeView.setDragEnabled(False)
+        self.attributeTreeView.setDragDropOverwriteMode(False)
+        self.attributeTreeView.setDragDropMode(QtWidgets.QAbstractItemView.NoDragDrop)
+        self.attributeTreeView.setDefaultDropAction(QtCore.Qt.IgnoreAction)
+        self.attributeTreeView.setAlternatingRowColors(True)
+        self.attributeTreeView.setSelectionMode(QtWidgets.QAbstractItemView.SingleSelection)
+        self.attributeTreeView.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
+        self.attributeTreeView.setUniformRowHeights(True)
+        self.attributeTreeView.setAnimated(True)
+        self.attributeTreeView.setExpandsOnDoubleClick(False)
+
+        self.attributeItemModel = qplugitemmodel.QPlugItemModel(parent=self.attributeTreeView)
+        self.attributeItemModel.setObjectName('attributeItemModel')
+
+        self.attributeStyledItemDelegate = qplugstyleditemdelegate.QPlugStyledItemDelegate(parent=self.attributeTreeView)
+        self.attributeStyledItemDelegate.setObjectName('attributeStyledItemDelegate')
+
+        self.attributeItemFilterModel = qplugitemfiltermodel.QPlugItemFilterModel(parent=self.attributeTreeView)
+        self.attributeItemFilterModel.setObjectName('attributeItemFilterModel')
+        self.attributeItemFilterModel.setSourceModel(self.attributeItemModel)
+
+        self.attributeTreeView.setModel(self.attributeItemFilterModel)
+        self.attributeTreeView.setItemDelegate(self.attributeStyledItemDelegate)
+
+        self.attributeHeader = self.attributeTreeView.header()
+        self.attributeHeader.setVisible(True)
+        self.attributeHeader.setMinimumSectionSize(100)
+        self.attributeHeader.setDefaultSectionSize(200)
+        self.attributeHeader.setStretchLastSection(True)
+
+        self.editPushButton = QtWidgets.QPushButton('Nothing Selected')
+        self.editPushButton.setObjectName('editPushButton')
+        self.editPushButton.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed))
+        self.editPushButton.setFixedHeight(24)
+        self.editPushButton.setFocusPolicy(QtCore.Qt.NoFocus)
+        self.editPushButton.clicked.connect(self.on_editPushButton_clicked)
+
+        self.filterLineEdit = QtWidgets.QLineEdit()
+        self.filterLineEdit.setObjectName('filterLineEdit')
+        self.filterLineEdit.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed))
+        self.filterLineEdit.setFixedHeight(24)
+        self.filterLineEdit.setFocusPolicy(QtCore.Qt.ClickFocus)
+        self.filterLineEdit.setPlaceholderText('Filter Attributes...')
+        self.filterLineEdit.textChanged.connect(self.attributeItemFilterModel.setFilterWildcard)
+
+        self.userDefinedCheckBox = QtWidgets.QCheckBox('User-Defined')
+        self.userDefinedCheckBox.setObjectName('userDefinedCheckBox')
+        self.userDefinedCheckBox.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Fixed))
+        self.userDefinedCheckBox.setFixedHeight(24)
+        self.userDefinedCheckBox.setFocusPolicy(QtCore.Qt.NoFocus)
+        self.userDefinedCheckBox.toggled.connect(self.attributeItemFilterModel.setHideStaticAttributes)
+
+        self.filterLayout = QtWidgets.QHBoxLayout()
+        self.filterLayout.setObjectName('userDefinedCheckBox')
+        self.filterLayout.setContentsMargins(0, 0, 0, 0)
+        self.filterLayout.addWidget(self.filterLineEdit)
+        self.filterLayout.addWidget(self.userDefinedCheckBox)
+
+        self.attributesLayout.addWidget(self.editPushButton)
+        self.attributesLayout.addLayout(self.filterLayout)
+        self.attributesLayout.addWidget(self.attributeTreeView)
+
+        centralLayout.addWidget(self.attributesGroupBox)
     # endregion
 
     # region Properties
@@ -58,34 +148,6 @@ class QSpreadsheetTab(qabstracttab.QAbstractTab):
     # endregion
 
     # region Methods
-    def postLoad(self, *args, **kwargs):
-        """
-        Called after the user interface has been loaded.
-
-        :rtype: None
-        """
-
-        # Call parent method
-        #
-        super(QSpreadsheetTab, self).postLoad(*args, **kwargs)
-
-        # Initialize attribute model
-        #
-        self.attributeItemModel = qplugitemmodel.QPlugItemModel(parent=self.attributeTreeView)
-        self.attributeItemModel.setObjectName('attributeItemModel')
-
-        self.attributeStyledItemDelegate = qplugstyleditemdelegate.QPlugStyledItemDelegate(parent=self.attributeTreeView)
-        self.attributeStyledItemDelegate.setObjectName('attributeStyledItemDelegate')
-
-        self.attributeItemFilterModel = qplugitemfiltermodel.QPlugItemFilterModel(parent=self.attributeTreeView)
-        self.attributeItemFilterModel.setObjectName('attributeItemFilterModel')
-        self.attributeItemFilterModel.setSourceModel(self.attributeItemModel)
-        self.filterLineEdit.textChanged.connect(self.attributeItemFilterModel.setFilterWildcard)
-        self.userDefinedCheckBox.toggled.connect(self.attributeItemFilterModel.setHideStaticAttributes)
-
-        self.attributeTreeView.setModel(self.attributeItemFilterModel)
-        self.attributeTreeView.setItemDelegate(self.attributeStyledItemDelegate)
-
     def invalidateEditor(self):
         """
         Refreshes the text on the edit button.

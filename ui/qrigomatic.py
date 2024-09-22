@@ -79,7 +79,11 @@ class QRigomatic(qsingletonwindow.QSingletonWindow):
     # endregion
 
     # region Dunderscores
-    __plugins__ = ('PointHelper', 'TransformConstraint', 'PointOnCurveConstraint')
+    __plugins__ = (
+        'PointHelper',
+        'TransformConstraint',
+        'PointOnCurveConstraint'
+    )
 
     def __init__(self, *args, **kwargs):
         """
@@ -144,14 +148,14 @@ class QRigomatic(qsingletonwindow.QSingletonWindow):
 
         self.wireColorAction = QtWidgets.QAction('Wire Color', parent=self.settingsMenu)
         self.wireColorAction.setObjectName('wireColorAction')
+        self.wireColorAction.setWhatsThis('WIRE_COLOR_RGB')
         self.wireColorAction.setCheckable(True)
         self.wireColorAction.setChecked(True)
-        self.wireColorAction.setWhatsThis('WIRE_COLOR_RGB')
 
         self.overrideColorAction = QtWidgets.QAction('Override Color', parent=self.settingsMenu)
         self.overrideColorAction.setObjectName('overrideColorAction')
-        self.overrideColorAction.setCheckable(True)
         self.overrideColorAction.setWhatsThis('OVERRIDE_COLOR_RGB')
+        self.overrideColorAction.setCheckable(True)
 
         self.colorModeActionGroup = QtWidgets.QActionGroup(self.settingsMenu)
         self.colorModeActionGroup.setObjectName('colorModeActionGroup')
@@ -284,52 +288,52 @@ class QRigomatic(qsingletonwindow.QSingletonWindow):
 
         # Initialize create node layout
         #
-        self.transformPushButton = QtWidgets.QPushButton('Transform')
+        self.transformPushButton = QtWidgets.QPushButton(QtGui.QIcon(':/out_transform.png'), 'Transform')
         self.transformPushButton.setObjectName('transformPushButton')
+        self.transformPushButton.setWhatsThis('transform')
         self.transformPushButton.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed))
         self.transformPushButton.setFixedHeight(24)
         self.transformPushButton.setFocusPolicy(QtCore.Qt.NoFocus)
-        self.transformPushButton.setWhatsThis('transform')
         self.transformPushButton.clicked.connect(self.on_transformPushButton_clicked)
 
-        self.jointPushButton = QtWidgets.QPushButton('Joint')
+        self.jointPushButton = QtWidgets.QPushButton(QtGui.QIcon(':/out_joint.png'), 'Joint')
         self.jointPushButton.setObjectName('jointPushButton')
+        self.jointPushButton.setWhatsThis('joint')
         self.jointPushButton.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed))
         self.jointPushButton.setFixedHeight(24)
         self.jointPushButton.setFocusPolicy(QtCore.Qt.NoFocus)
-        self.jointPushButton.setWhatsThis('joint')
         self.jointPushButton.clicked.connect(self.on_jointPushButton_clicked)
 
-        self.ikHandlePushButton = QtWidgets.QPushButton('IK-Handle')
+        self.ikHandlePushButton = QtWidgets.QPushButton(QtGui.QIcon(':/out_ikHandle.png'), 'IK-Handle')
         self.ikHandlePushButton.setObjectName('ikHandlePushButton')
+        self.ikHandlePushButton.setWhatsThis('ikHandle')
         self.ikHandlePushButton.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed))
         self.ikHandlePushButton.setFixedHeight(24)
         self.ikHandlePushButton.setFocusPolicy(QtCore.Qt.NoFocus)
-        self.ikHandlePushButton.setWhatsThis('ikHandle')
         self.ikHandlePushButton.clicked.connect(self.on_ikHandlePushButton_clicked)
 
-        self.locatorPushButton = QtWidgets.QPushButton('Locator')
+        self.locatorPushButton = QtWidgets.QPushButton(QtGui.QIcon(':/out_locator.png'), 'Locator')
         self.locatorPushButton.setObjectName('locatorPushButton')
+        self.locatorPushButton.setWhatsThis('locator')
         self.locatorPushButton.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed))
         self.locatorPushButton.setFixedHeight(24)
         self.locatorPushButton.setFocusPolicy(QtCore.Qt.NoFocus)
-        self.locatorPushButton.setWhatsThis('locator')
         self.locatorPushButton.clicked.connect(self.on_locatorPushButton_clicked)
 
-        self.helperPushButton = QtWidgets.QPushButton('Helper')
+        self.helperPushButton = QtWidgets.QPushButton(QtGui.QIcon(':/out_pointHelper.png'), 'Helper')
         self.helperPushButton.setObjectName('helperPushButton')
+        self.helperPushButton.setWhatsThis('pointHelper')
         self.helperPushButton.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed))
         self.helperPushButton.setFixedHeight(24)
         self.helperPushButton.setFocusPolicy(QtCore.Qt.NoFocus)
-        self.helperPushButton.setWhatsThis('pointHelper')
         self.helperPushButton.clicked.connect(self.on_helperPushButton_clicked)
 
-        self.intermediatePushButton = QtWidgets.QPushButton('Intermediate')
+        self.intermediatePushButton = QtWidgets.QPushButton(QtGui.QIcon(':/out_transform.png'), 'Intermediate')
         self.intermediatePushButton.setObjectName('intermediatePushButton')
+        self.intermediatePushButton.setWhatsThis('intermediate')
         self.intermediatePushButton.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed))
         self.intermediatePushButton.setFixedHeight(24)
         self.intermediatePushButton.setFocusPolicy(QtCore.Qt.NoFocus)
-        self.intermediatePushButton.setWhatsThis('intermediate')
         self.intermediatePushButton.clicked.connect(self.on_intermediatePushButton_clicked)
         
         self.createNodeLayout = QtWidgets.QGridLayout()
@@ -357,6 +361,7 @@ class QRigomatic(qsingletonwindow.QSingletonWindow):
         self.renameTab = qrenametab.QRenameTab(parent=self.tabControl)
         self.shapesTab = qshapestab.QShapesTab(parent=self.tabControl)
         self.attributesTab = qattributestab.QAttributesTab(parent=self.tabControl)
+        self.spreadsheetTab = qspreadsheettab.QSpreadsheetTab(parent=self.tabControl)
         self.constraintsTab = qconstraintstab.QConstraintsTab(parent=self.tabControl)
         self.publishTab = qpublishtab.QPublishTab(parent=self.tabControl)
 
@@ -364,6 +369,7 @@ class QRigomatic(qsingletonwindow.QSingletonWindow):
         self.tabControl.addTab(self.renameTab, 'Rename')
         self.tabControl.addTab(self.shapesTab, 'Shapes')
         self.tabControl.addTab(self.attributesTab, 'Attributes')
+        self.tabControl.addTab(self.spreadsheetTab, 'Spreadsheet')
         self.tabControl.addTab(self.constraintsTab, 'Constraints')
         self.tabControl.addTab(self.publishTab, 'Publish')
 

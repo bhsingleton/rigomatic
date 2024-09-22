@@ -8,10 +8,11 @@ from collections import namedtuple
 from enum import IntEnum
 from random import randint
 from dcc.python import stringutils
+from dcc.ui import qdivider
 from dcc.maya.libs import transformutils, shapeutils
 from dcc.maya.decorators import undo
 from . import qabstracttab
-from ..widgets import qcolorbutton
+from ..widgets import qcolorbutton, qgradient
 from ...libs import createutils, modifyutils, ColorMode
 
 import logging
@@ -73,115 +74,198 @@ class QShapesTab(qabstracttab.QAbstractTab):
         self._startColor = None
         self._endColor = None
 
-        # Declare public variables
-        #
-        self.createGroupBox = None
-        self.filterWidget = None
-        self.filterLineEdit = None
-        self.saveShapePushButton = None
-        self.refreshPushButton = None
-        self.shapeListView = None
-        self.shapeItemModel = None
-        self.shapeFilterItemModel = None
-        self.createCustomPushButton = None
-        self.createStarPushButton = None
-        self.edgeToCurvePushButton = None
-        self.edgeToHelperPushButton = None
-        self.degreeSpinBox = None
-        self.offsetSpinBox = None
-        self.renameShapesPushButton = None
-        self.removeShapesPushButton = None
-
-        self.transformGroupBox = None
-        self.pivotWidget = None
-        self.pivotLabel = None
-        self.pivotButtonGroup =None
-        self.localRadioButton = None
-        self.parentRadioButton = None
-        self.worldRadioButton = None
-        self.scaleWidget = None
-        self.scaleLabel = None
-        self.scaleSpinBox = None
-        self.growPushButton = None
-        self.shrinkPushButton = None
-        self.helperDivider = None
-        self.helperLabel = None
-        self.helperLine = None
-        self.widthWidget = None
-        self.widthLabel = None
-        self.widthSpinBox = None
-        self.heightWidget = None
-        self.heightLabel = None
-        self.heightSpinBox = None
-        self.depthWidget = None
-        self.depthLabel = None
-        self.depthSpinBox = None
-        self.fitPushButton = None
-        self.resetPushButton = None
-
-        self.parentGroupBox = None
-        self.parentPushButton = None
-        self.preservePositionCheckBox = None
-
-        self.colorizeGroupBox = None
-        self.gradientWidget = None
-        self.startColorButton = None
-        self.endColorButton = None
-        self.gradient = None
-        self.swatchesWidget = None
-        self.swatchesLayout = None
-        self.swatchesButtonGroup = None
-        self.useSelectedNodesCheckBox = None
-        self.applyPushButton = None
-    # endregion
-
-    # region Methods
-    def postLoad(self, *args, **kwargs):
+    def __setup_ui__(self, *args, **kwargs):
         """
-        Called after the user interface has been loaded.
+        Private method that initializes the user interface.
 
         :rtype: None
         """
 
         # Call parent method
         #
-        super(QShapesTab, self).postLoad(*args, **kwargs)
+        super(QShapesTab, self).__setup_ui__(*args, **kwargs)
 
-        # Initialize shape item model
+        # Initialize central layout
         #
-        itemPrototype = QtGui.QStandardItem('')
-        itemPrototype.setSizeHint(QtCore.QSize(100, 24))
-        itemPrototype.setIcon(QtGui.QIcon(':data/icons/dict.svg'))
+        centralLayout = QtWidgets.QVBoxLayout()
+        centralLayout.setObjectName('centralLayout')
+
+        self.setLayout(centralLayout)
+
+        # Initialize create group-box
+        #
+        self.createLayout = QtWidgets.QGridLayout()
+        self.createLayout.setObjectName('createLayout')
+
+        self.createGroupBox = QtWidgets.QGroupBox('')
+        self.createGroupBox.setObjectName('createGroupBox')
+        self.createGroupBox.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed))
+        self.createGroupBox.setFocusPolicy(QtCore.Qt.NoFocus)
+        self.createGroupBox.setLayout(self.createLayout)
+
+        self.shapeListView = QtWidgets.QListView()
+        self.shapeListView.setObjectName('shapeListView')
+        self.shapeListView.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding))
+        self.shapeListView.setFocusPolicy(QtCore.Qt.ClickFocus)
+        self.shapeListView.setStyleSheet('QListView::item { height: 24px; }')
+        self.shapeListView.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
+        self.shapeListView.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
+        self.shapeListView.setDragEnabled(False)
+        self.shapeListView.setDragDropOverwriteMode(False)
+        self.shapeListView.setDragDropMode(QtWidgets.QAbstractItemView.NoDragDrop)
+        self.shapeListView.setDefaultDropAction(QtCore.Qt.IgnoreAction)
+        self.shapeListView.setAlternatingRowColors(True)
+        self.shapeListView.setUniformItemSizes(True)
+        self.shapeListView.setSelectionMode(QtWidgets.QAbstractItemView.SingleSelection)
+        self.shapeListView.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
+
+        self.itemPrototype = QtGui.QStandardItem('')
+        self.itemPrototype.setSizeHint(QtCore.QSize(100, 24))
+        self.itemPrototype.setIcon(QtGui.QIcon(':data/icons/dict.svg'))
 
         self.shapeItemModel = QtGui.QStandardItemModel(parent=self.shapeListView)
         self.shapeItemModel.setObjectName('shapeItemModel')
         self.shapeItemModel.setColumnCount(1)
-        self.shapeItemModel.setItemPrototype(itemPrototype)
+        self.shapeItemModel.setItemPrototype(self.itemPrototype)
 
         self.shapeFilterItemModel = QtCore.QSortFilterProxyModel(parent=self.shapeListView)
         self.shapeFilterItemModel.setSourceModel(self.shapeItemModel)
-        self.filterLineEdit.textChanged.connect(self.shapeFilterItemModel.setFilterWildcard)
 
         self.shapeListView.setModel(self.shapeFilterItemModel)
 
-        # Initialize pivot button group
-        #
-        self.pivotButtonGroup = QtWidgets.QButtonGroup(parent=self.pivotWidget)
-        self.pivotButtonGroup.addButton(self.localRadioButton, id=0)
-        self.pivotButtonGroup.addButton(self.parentRadioButton, id=1)
-        self.pivotButtonGroup.addButton(self.worldRadioButton, id=2)
+        self.filterLineEdit = QtWidgets.QLineEdit()
+        self.filterLineEdit.setObjectName('filterLineEdit')
+        self.filterLineEdit.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed))
+        self.filterLineEdit.setFixedHeight(24)
+        self.filterLineEdit.setFocusPolicy(QtCore.Qt.ClickFocus)
+        self.filterLineEdit.setPlaceholderText('Filter Custom Shapes...')
+        self.filterLineEdit.textChanged.connect(self.shapeFilterItemModel.setFilterWildcard)
 
-        # Connect start/end buttons to gradient
-        #
-        self.startColorChanged.connect(self.startColorButton.setColor)
-        self.startColorButton.colorChanged.connect(self.gradient.setStartColor)
+        self.saveShapePushButton = QtWidgets.QPushButton(QtGui.QIcon(':/dcc/icons/save_file.svg'), '')
+        self.saveShapePushButton.setObjectName('saveShapePushButton')
+        self.saveShapePushButton.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed))
+        self.saveShapePushButton.setFixedSize(QtCore.QSize(24, 24))
+        self.saveShapePushButton.setFocusPolicy(QtCore.Qt.NoFocus)
+        self.saveShapePushButton.clicked.connect(self.on_saveShapePushButton_clicked)
 
-        self.endColorChanged.connect(self.endColorButton.setColor)
-        self.endColorButton.colorChanged.connect(self.gradient.setEndColor)
+        self.refreshShapesPushButton = QtWidgets.QPushButton(QtGui.QIcon(':/dcc/icons/refresh.svg'), '')
+        self.refreshShapesPushButton.setObjectName('refreshShapesPushButton')
+        self.refreshShapesPushButton.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed))
+        self.refreshShapesPushButton.setFixedSize(QtCore.QSize(24, 24))
+        self.refreshShapesPushButton.setFocusPolicy(QtCore.Qt.NoFocus)
+        self.refreshShapesPushButton.clicked.connect(self.on_refreshShapesPushButton_clicked)
 
-        # Initialize swatch button group
+        self.filterLayout = QtWidgets.QHBoxLayout()
+        self.filterLayout.setObjectName('filterLayout')
+        self.filterLayout.setContentsMargins(0, 0, 0, 0)
+        self.filterLayout.addWidget(self.filterLineEdit)
+        self.filterLayout.addWidget(self.saveShapePushButton)
+        self.filterLayout.addWidget(self.refreshShapesPushButton)
+
+        self.createCustomPushButton = QtWidgets.QPushButton('Create Custom')
+        self.createCustomPushButton.setObjectName('createCustomPushButton')
+        self.createCustomPushButton.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed))
+        self.createCustomPushButton.setFixedHeight(24)
+        self.createCustomPushButton.setFocusPolicy(QtCore.Qt.NoFocus)
+        self.createCustomPushButton.clicked.connect(self.on_createCustomPushButton_clicked)
+
+        self.createStarPushButton = QtWidgets.QPushButton('Create Star')
+        self.createStarPushButton.setObjectName('createStarPushButton')
+        self.createStarPushButton.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed))
+        self.createStarPushButton.setFixedHeight(24)
+        self.createStarPushButton.setFocusPolicy(QtCore.Qt.NoFocus)
+        self.createStarPushButton.clicked.connect(self.on_createStarPushButton_clicked)
+
+        self.edgeToCurvePushButton = QtWidgets.QPushButton('Edge to Curve')
+        self.edgeToCurvePushButton.setObjectName('edgeToCurvePushButton')
+        self.edgeToCurvePushButton.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed))
+        self.edgeToCurvePushButton.setFixedHeight(24)
+        self.edgeToCurvePushButton.setFocusPolicy(QtCore.Qt.NoFocus)
+        self.edgeToCurvePushButton.clicked.connect(self.on_edgeToCurvePushButton_clicked)
+
+        self.degreeSpinBox = QtWidgets.QSpinBox()
+        self.degreeSpinBox.setObjectName('degreeSpinBox')
+        self.degreeSpinBox.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed))
+        self.degreeSpinBox.setFixedHeight(24)
+        self.degreeSpinBox.setAlignment(QtCore.Qt.AlignCenter)
+        self.degreeSpinBox.setPrefix('Degree: ')
+        self.degreeSpinBox.setMinimum(1)
+        self.degreeSpinBox.setMaximum(7)
+        self.degreeSpinBox.setValue(1)
+
+        self.edgeToHelperPushButton = QtWidgets.QPushButton('Edge to Helper')
+        self.edgeToHelperPushButton.setObjectName('edgeToHelperPushButton')
+        self.edgeToHelperPushButton.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed))
+        self.edgeToHelperPushButton.setFixedHeight(24)
+        self.edgeToHelperPushButton.setFocusPolicy(QtCore.Qt.NoFocus)
+        self.edgeToHelperPushButton.clicked.connect(self.on_edgeToHelperPushButton_clicked)
+
+        self.offsetSpinBox = QtWidgets.QDoubleSpinBox()
+        self.offsetSpinBox.setObjectName('offsetSpinBox')
+        self.offsetSpinBox.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed))
+        self.offsetSpinBox.setFixedHeight(24)
+        self.offsetSpinBox.setAlignment(QtCore.Qt.AlignCenter)
+        self.offsetSpinBox.setPrefix('Offset: ')
+        self.offsetSpinBox.setDecimals(2)
+        self.offsetSpinBox.setMinimum(0.0)
+        self.offsetSpinBox.setMaximum(100.0)
+        self.offsetSpinBox.setSingleStep(1.0)
+        self.offsetSpinBox.setValue(0.0)
+
+        self.renameShapesPushButton = QtWidgets.QPushButton('Rename Shapes')
+        self.renameShapesPushButton.setObjectName('renameShapesPushButton')
+        self.renameShapesPushButton.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed))
+        self.renameShapesPushButton.setFixedHeight(24)
+        self.renameShapesPushButton.setFocusPolicy(QtCore.Qt.NoFocus)
+        self.renameShapesPushButton.clicked.connect(self.on_renameShapesPushButton_clicked)
+
+        self.removeShapesPushButton = QtWidgets.QPushButton('Remove Shapes')
+        self.removeShapesPushButton.setObjectName('removeShapesPushButton')
+        self.removeShapesPushButton.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed))
+        self.removeShapesPushButton.setFixedHeight(24)
+        self.removeShapesPushButton.setFocusPolicy(QtCore.Qt.NoFocus)
+        self.removeShapesPushButton.clicked.connect(self.on_removeShapesPushButton_clicked)
+
+        self.reparentShapesPushButton = QtWidgets.QPushButton('Reparent Shapes')
+        self.reparentShapesPushButton.setObjectName('reparentShapesPushButton')
+        self.reparentShapesPushButton.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed))
+        self.reparentShapesPushButton.setFixedHeight(24)
+        self.reparentShapesPushButton.setFocusPolicy(QtCore.Qt.NoFocus)
+        self.reparentShapesPushButton.clicked.connect(self.on_reparentShapesPushButton_clicked)
+
+        self.preservePositionCheckBox = QtWidgets.QCheckBox('Preserve Shape Position')
+        self.preservePositionCheckBox.setObjectName('preservePositionCheckBox')
+        self.preservePositionCheckBox.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed))
+        self.preservePositionCheckBox.setFixedHeight(24)
+        self.preservePositionCheckBox.setFocusPolicy(QtCore.Qt.NoFocus)
+
+        self.createLayout.addLayout(self.filterLayout, 0, 0, 1, 2)
+        self.createLayout.addWidget(self.shapeListView, 1, 0, 1, 2)
+        self.createLayout.addWidget(self.createCustomPushButton, 2, 0)
+        self.createLayout.addWidget(self.createStarPushButton, 2, 1)
+        self.createLayout.addWidget(qdivider.QDivider(QtCore.Qt.Horizontal), 3, 0, 1, 2)
+        self.createLayout.addWidget(self.edgeToCurvePushButton, 4, 0)
+        self.createLayout.addWidget(self.degreeSpinBox, 4, 1)
+        self.createLayout.addWidget(self.edgeToHelperPushButton, 5, 0)
+        self.createLayout.addWidget(self.offsetSpinBox, 5, 1)
+        self.createLayout.addWidget(qdivider.QDivider(QtCore.Qt.Horizontal), 6, 0, 1, 2)
+        self.createLayout.addWidget(self.renameShapesPushButton)
+        self.createLayout.addWidget(self.removeShapesPushButton)
+        self.createLayout.addWidget(self.reparentShapesPushButton)
+        self.createLayout.addWidget(self.preservePositionCheckBox)
+
+        centralLayout.addWidget(self.createGroupBox)
+
+        # Initialize swatches widget
         #
-        self.swatchesLayout = self.swatchesWidget.layout()
+        self.swatchesLayout = QtWidgets.QGridLayout()
+        self.swatchesLayout.setObjectName('swatchesLayout')
+        self.swatchesLayout.setContentsMargins(0, 0, 0, 0)
+
+        self.swatchesWidget = QtWidgets.QWidget()
+        self.swatchesWidget.setObjectName('swatchesWidget')
+        self.swatchesWidget.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed))
+        self.swatchesWidget.setLayout(self.swatchesLayout)
 
         self.swatchesButtonGroup = QtWidgets.QButtonGroup(self.swatchesWidget)
         self.swatchesButtonGroup.setExclusive(False)
@@ -211,11 +295,290 @@ class QShapesTab(qabstracttab.QAbstractTab):
 
         self.ensureSwatches()
 
-        # Invalidate shape items
+        # Initialize colorize group-box
+        #
+        self.colorizeLayout = QtWidgets.QVBoxLayout()
+        self.colorizeLayout.setObjectName('colorizeLayout')
+
+        self.colorizeGroupBox = QtWidgets.QGroupBox('Recolor:')
+        self.colorizeGroupBox.setObjectName('colorizeGroupBox')
+        self.colorizeGroupBox.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed))
+        self.colorizeGroupBox.setFocusPolicy(QtCore.Qt.NoFocus)
+        self.colorizeGroupBox.setLayout(self.colorizeLayout)
+
+        self.gradient = qgradient.QGradient()
+        self.gradient.setObjectName('gradient')
+        self.gradient.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed))
+        self.gradient.setFixedHeight(24)
+        self.gradient.setAutoFillBackground(True)
+
+        self.startColorButton = qcolorbutton.QColorButton('Start')
+        self.startColorButton.setObjectName('startColorButton')
+        self.startColorButton.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed))
+        self.startColorButton.setFixedSize(QtCore.QSize(48, 24))
+        self.startColorButton.setAcceptDrops(True)
+        self.startColorButton.setAutoFillBackground(True)
+        self.startColorButton.clicked.connect(self.on_startColorButton_clicked)
+        self.startColorButton.colorDropped.connect(self.on_startColorButton_colorDropped)
+        self.startColorButton.colorChanged.connect(self.gradient.setStartColor)
+
+        self.endColorButton = qcolorbutton.QColorButton('End')
+        self.endColorButton.setObjectName('endColorButton')
+        self.endColorButton.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed))
+        self.endColorButton.setFixedSize(QtCore.QSize(48, 24))
+        self.endColorButton.setAcceptDrops(True)
+        self.endColorButton.setAutoFillBackground(True)
+        self.endColorButton.clicked.connect(self.on_endColorButton_clicked)
+        self.endColorButton.colorDropped.connect(self.on_endColorButton_colorDropped)
+        self.endColorButton.colorChanged.connect(self.gradient.setEndColor)
+
+        self.startColorChanged.connect(self.startColorButton.setColor)
+        self.endColorChanged.connect(self.endColorButton.setColor)
+
+        self.gradientLayout = QtWidgets.QHBoxLayout()
+        self.gradientLayout.setObjectName('gradientLayout')
+        self.gradientLayout.setContentsMargins(0, 0, 0, 0)
+        self.gradientLayout.setSpacing(0)
+        self.gradientLayout.addWidget(self.startColorButton)
+        self.gradientLayout.addWidget(self.gradient)
+        self.gradientLayout.addWidget(self.endColorButton)
+
+        self.useSelectedNodesCheckBox = QtWidgets.QCheckBox('Use Selected Nodes')
+        self.useSelectedNodesCheckBox.setObjectName('useSelectedNodesCheckBox')
+        self.useSelectedNodesCheckBox.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Fixed))
+        self.useSelectedNodesCheckBox.setFixedHeight(24)
+        self.useSelectedNodesCheckBox.setFocusPolicy(QtCore.Qt.NoFocus)
+        self.useSelectedNodesCheckBox.toggled.connect(self.on_useSelectedNodesCheckBox_toggled)
+
+        self.applyGradientPushButton = QtWidgets.QPushButton('Apply')
+        self.applyGradientPushButton.setObjectName('applyGradientPushButton')
+        self.applyGradientPushButton.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed))
+        self.applyGradientPushButton.setFixedHeight(24)
+        self.applyGradientPushButton.setFocusPolicy(QtCore.Qt.NoFocus)
+        self.applyGradientPushButton.clicked.connect(self.on_applyGradientPushButton_clicked)
+
+        self.colorizeButtonsLayout = QtWidgets.QHBoxLayout()
+        self.colorizeButtonsLayout.setObjectName('')
+        self.colorizeButtonsLayout.setContentsMargins(0, 0, 0, 0)
+        self.colorizeButtonsLayout.addWidget(self.useSelectedNodesCheckBox)
+        self.colorizeButtonsLayout.addWidget(self.applyGradientPushButton)
+
+        self.colorizeLayout.addLayout(self.gradientLayout)
+        self.colorizeLayout.addWidget(self.swatchesWidget)
+        self.colorizeLayout.addLayout(self.colorizeButtonsLayout)
+
+        centralLayout.addWidget(self.colorizeGroupBox)
+
+        # Initialize scale group-box
+        #
+        self.rescaleLayout = QtWidgets.QVBoxLayout()
+        self.rescaleLayout.setObjectName('rescaleLayout')
+
+        self.rescaleGroupBox = QtWidgets.QGroupBox('Rescale:')
+        self.rescaleGroupBox.setObjectName('rescaleGroupBox')
+        self.rescaleGroupBox.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed))
+        self.rescaleGroupBox.setFocusPolicy(QtCore.Qt.NoFocus)
+        self.rescaleGroupBox.setLayout(self.rescaleLayout)
+
+        self.pivotLabel = QtWidgets.QLabel('Pivot:')
+        self.pivotLabel.setObjectName('pivotLabel')
+        self.pivotLabel.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed))
+        self.pivotLabel.setFixedSize(QtCore.QSize(40, 24))
+        self.pivotLabel.setFocusPolicy(QtCore.Qt.NoFocus)
+        self.pivotLabel.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
+
+        self.localRadioButton = QtWidgets.QRadioButton('Local')
+        self.localRadioButton.setObjectName('localRadioButton')
+        self.localRadioButton.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed))
+        self.localRadioButton.setFixedHeight(24)
+        self.localRadioButton.setFocusPolicy(QtCore.Qt.NoFocus)
+        self.localRadioButton.setChecked(True)
+
+        self.parentRadioButton = QtWidgets.QRadioButton('Parent')
+        self.parentRadioButton.setObjectName('parentRadioButton')
+        self.parentRadioButton.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed))
+        self.parentRadioButton.setFixedHeight(24)
+        self.parentRadioButton.setFocusPolicy(QtCore.Qt.NoFocus)
+
+        self.worldRadioButton = QtWidgets.QRadioButton('World')
+        self.worldRadioButton.setObjectName('worldRadioButton')
+        self.worldRadioButton.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed))
+        self.worldRadioButton.setFixedHeight(24)
+        self.worldRadioButton.setFocusPolicy(QtCore.Qt.NoFocus)
+
+        self.pivotButtonGroup = QtWidgets.QButtonGroup(parent=self.rescaleGroupBox)
+        self.pivotButtonGroup.setObjectName('pivotButtonGroup')
+        self.pivotButtonGroup.setExclusive(True)
+        self.pivotButtonGroup.addButton(self.localRadioButton, id=0)
+        self.pivotButtonGroup.addButton(self.parentRadioButton, id=1)
+        self.pivotButtonGroup.addButton(self.worldRadioButton, id=2)
+        
+        self.pivotLayout = QtWidgets.QHBoxLayout()
+        self.pivotLayout.setObjectName('pivotLayout')
+        self.pivotLayout.setContentsMargins(0, 0, 0, 0)
+        self.pivotLayout.addWidget(self.pivotLabel)
+        self.pivotLayout.addWidget(self.localRadioButton, alignment=QtCore.Qt.AlignCenter)
+        self.pivotLayout.addWidget(self.parentRadioButton, alignment=QtCore.Qt.AlignCenter)
+        self.pivotLayout.addWidget(self.worldRadioButton, alignment=QtCore.Qt.AlignCenter)
+
+        self.scaleLabel = QtWidgets.QLabel('Scale:')
+        self.scaleLabel.setObjectName('scaleLabel')
+        self.scaleLabel.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed))
+        self.scaleLabel.setFixedSize(QtCore.QSize(40, 24))
+        self.scaleLabel.setFocusPolicy(QtCore.Qt.NoFocus)
+        self.scaleLabel.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
+
+        self.scaleSpinBox = QtWidgets.QDoubleSpinBox()
+        self.scaleSpinBox.setObjectName('scaleSpinBox')
+        self.scaleSpinBox.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed))
+        self.scaleSpinBox.setFixedHeight(24)
+        self.scaleSpinBox.setFocusPolicy(QtCore.Qt.ClickFocus)
+        self.scaleSpinBox.setAlignment(QtCore.Qt.AlignCenter)
+        self.scaleSpinBox.setSuffix('%')
+        self.scaleSpinBox.setDecimals(2)
+        self.scaleSpinBox.setMinimum(0.0)
+        self.scaleSpinBox.setMaximum(100.0)
+        self.scaleSpinBox.setSingleStep(0.25)
+        self.scaleSpinBox.setValue(50.0)
+
+        self.growPushButton = QtWidgets.QPushButton('+')
+        self.growPushButton.setObjectName('growPushButton')
+        self.growPushButton.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed))
+        self.growPushButton.setFixedSize(QtCore.QSize(24, 24))
+        self.growPushButton.setFocusPolicy(QtCore.Qt.NoFocus)
+        self.growPushButton.clicked.connect(self.on_growPushButton_clicked)
+
+        self.shrinkPushButton = QtWidgets.QPushButton('-')
+        self.shrinkPushButton.setObjectName('shrinkPushButton')
+        self.shrinkPushButton.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed))
+        self.shrinkPushButton.setFixedSize(QtCore.QSize(24, 24))
+        self.shrinkPushButton.setFocusPolicy(QtCore.Qt.NoFocus)
+        self.shrinkPushButton.clicked.connect(self.on_shrinkPushButton_clicked)
+
+        self.scaleButtonsLayout = QtWidgets.QHBoxLayout()
+        self.scaleButtonsLayout.setObjectName('scaleButtonsLayout')
+        self.scaleButtonsLayout.setContentsMargins(0, 0, 0, 0)
+        self.scaleButtonsLayout.setSpacing(1)
+        self.scaleButtonsLayout.addWidget(self.growPushButton)
+        self.scaleButtonsLayout.addWidget(self.shrinkPushButton)
+
+        self.scaleLayout = QtWidgets.QHBoxLayout()
+        self.scaleLayout.setObjectName('scaleLayout')
+        self.scaleLayout.setContentsMargins(0, 0, 0, 0)
+        self.scaleLayout.addWidget(self.scaleLabel)
+        self.scaleLayout.addWidget(self.scaleSpinBox)
+        self.scaleLayout.addLayout(self.scaleButtonsLayout)
+
+        self.rescaleLayout.addLayout(self.pivotLayout)
+        self.rescaleLayout.addLayout(self.scaleLayout)
+
+        centralLayout.addWidget(self.rescaleGroupBox)
+
+        # Initialize bounding-box group-box
+        #
+        self.resizeLayout = QtWidgets.QGridLayout()
+        self.resizeLayout.setObjectName('resizeLayout')
+
+        self.resizeGroupBox = QtWidgets.QGroupBox('Resize:')
+        self.resizeGroupBox.setObjectName('resizeGroupBox')
+        self.resizeGroupBox.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed))
+        self.resizeGroupBox.setFocusPolicy(QtCore.Qt.NoFocus)
+        self.resizeGroupBox.setLayout(self.resizeLayout)
+
+        self.widthLabel = QtWidgets.QLabel('Width:')
+        self.widthLabel.setObjectName('widthLabel')
+        self.widthLabel.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed))
+        self.widthLabel.setFixedSize(QtCore.QSize(40, 24))
+        self.widthLabel.setFocusPolicy(QtCore.Qt.NoFocus)
+        self.widthLabel.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
+
+        self.widthSpinBox = QtWidgets.QDoubleSpinBox()
+        self.widthSpinBox.setObjectName('widthSpinBox')
+        self.widthSpinBox.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed))
+        self.widthSpinBox.setFixedHeight(24)
+        self.widthSpinBox.setFocusPolicy(QtCore.Qt.ClickFocus)
+        self.widthSpinBox.setDecimals(2)
+        self.widthSpinBox.setMinimum(0.0)
+        self.widthSpinBox.setMaximum(1000.0)
+        self.widthSpinBox.setSingleStep(1.0)
+        self.widthSpinBox.setValue(0.0)
+        self.widthSpinBox.editingFinished.connect(self.on_widthSpinBox_editingFinished)
+
+        self.heightLabel = QtWidgets.QLabel('Height:')
+        self.heightLabel.setObjectName('heightLabel')
+        self.heightLabel.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed))
+        self.heightLabel.setFixedSize(QtCore.QSize(40, 24))
+        self.heightLabel.setFocusPolicy(QtCore.Qt.NoFocus)
+        self.heightLabel.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
+
+        self.heightSpinBox = QtWidgets.QDoubleSpinBox()
+        self.heightSpinBox.setObjectName('heightSpinBox')
+        self.heightSpinBox.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed))
+        self.heightSpinBox.setFixedHeight(24)
+        self.heightSpinBox.setFocusPolicy(QtCore.Qt.ClickFocus)
+        self.heightSpinBox.setDecimals(2)
+        self.heightSpinBox.setMinimum(0.0)
+        self.heightSpinBox.setMaximum(1000.0)
+        self.heightSpinBox.setSingleStep(1.0)
+        self.heightSpinBox.setValue(0.0)
+        self.heightSpinBox.editingFinished.connect(self.on_widthSpinBox_editingFinished)
+
+        self.depthLabel = QtWidgets.QLabel('Depth:')
+        self.depthLabel.setObjectName('depthLabel')
+        self.depthLabel.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed))
+        self.depthLabel.setFixedSize(QtCore.QSize(40, 24))
+        self.depthLabel.setFocusPolicy(QtCore.Qt.NoFocus)
+        self.depthLabel.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
+
+        self.depthSpinBox = QtWidgets.QDoubleSpinBox()
+        self.depthSpinBox.setObjectName('depthSpinBox')
+        self.depthSpinBox.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed))
+        self.depthSpinBox.setFixedHeight(24)
+        self.depthSpinBox.setFocusPolicy(QtCore.Qt.ClickFocus)
+        self.depthSpinBox.setDecimals(2)
+        self.depthSpinBox.setMinimum(0.0)
+        self.depthSpinBox.setMaximum(1000.0)
+        self.depthSpinBox.setSingleStep(1.0)
+        self.depthSpinBox.setValue(0.0)
+        self.depthSpinBox.editingFinished.connect(self.on_widthSpinBox_editingFinished)
+
+        self.dimensionsLayout = QtWidgets.QHBoxLayout()
+        self.dimensionsLayout.setObjectName('dimensionsLayout')
+        self.dimensionsLayout.setContentsMargins(0, 0, 0, 0)
+        self.dimensionsLayout.addWidget(self.widthLabel)
+        self.dimensionsLayout.addWidget(self.widthSpinBox)
+        self.dimensionsLayout.addWidget(self.heightLabel)
+        self.dimensionsLayout.addWidget(self.heightSpinBox)
+        self.dimensionsLayout.addWidget(self.depthLabel)
+        self.dimensionsLayout.addWidget(self.depthSpinBox)
+
+        self.fitPushButton = QtWidgets.QPushButton('Reset')
+        self.fitPushButton.setObjectName('fitPushButton')
+        self.fitPushButton.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed))
+        self.fitPushButton.setFixedHeight(24)
+        self.fitPushButton.setFocusPolicy(QtCore.Qt.NoFocus)
+        self.fitPushButton.clicked.connect(self.on_fitPushButton_clicked)
+
+        self.resetPushButton = QtWidgets.QPushButton('Reset')
+        self.resetPushButton.setObjectName('resetPushButton')
+        self.resetPushButton.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed))
+        self.resetPushButton.setFixedHeight(24)
+        self.resetPushButton.setFocusPolicy(QtCore.Qt.NoFocus)
+        self.resetPushButton.clicked.connect(self.on_resetPushButton_clicked)
+
+        self.resizeLayout.addLayout(self.dimensionsLayout, 0, 0, 1, 2)
+        self.resizeLayout.addWidget(self.fitPushButton, 1, 0)
+        self.resizeLayout.addWidget(self.resetPushButton, 1, 1)
+
+        centralLayout.addWidget(self.resizeGroupBox)
+
+        # Invalidate user interface
         #
         self.invalidateShapes()
         self.invalidateSwatches()
+    # endregion
 
+    # region Methods
     def loadSettings(self, settings):
         """
         Loads the user settings.
@@ -1636,9 +1999,9 @@ class QShapesTab(qabstracttab.QAbstractTab):
             log.warning('Not enough controls selected to colorize!')
 
     @QtCore.Slot()
-    def on_parentPushButton_clicked(self):
+    def on_reparentShapesPushButton_clicked(self):
         """
-        Slot method for the `parentPushButton` widget's `clicked` signal.
+        Slot method for the `reparentShapesPushButton` widget's `clicked` signal.
 
         :rtype: None
         """
