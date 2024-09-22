@@ -320,14 +320,14 @@ class QConstraintsTab(qabstracttab.QAbstractTab):
         self.mutePushButton.setCheckable(True)
         self.mutePushButton.clicked.connect(self.on_mutePushButton_clicked)
 
-        self.updateOffsetsPushButton = QtWidgets.QPushButton('Remove Target')
+        self.updateOffsetsPushButton = QtWidgets.QPushButton('Update Offsets')
         self.updateOffsetsPushButton.setObjectName('updateOffsetsPushButton')
         self.updateOffsetsPushButton.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed))
         self.updateOffsetsPushButton.setFixedHeight(24)
         self.updateOffsetsPushButton.setFocusPolicy(QtCore.Qt.NoFocus)
         self.updateOffsetsPushButton.clicked.connect(self.on_updateOffsetsPushButton_clicked)
 
-        self.resetOffsetsPushButton = QtWidgets.QPushButton('Remove Target')
+        self.resetOffsetsPushButton = QtWidgets.QPushButton('Reset Offsets')
         self.resetOffsetsPushButton.setObjectName('resetOffsetsPushButton')
         self.resetOffsetsPushButton.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed))
         self.resetOffsetsPushButton.setFixedHeight(24)
