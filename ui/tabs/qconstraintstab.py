@@ -259,6 +259,7 @@ class QConstraintsTab(qabstracttab.QAbstractTab):
         self.targetTableView.setSelectionMode(QtWidgets.QAbstractItemView.SingleSelection)
         self.targetTableView.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
         self.targetTableView.setShowGrid(True)
+        self.targetTableView.clicked.connect(self.on_targetTableView_clicked)
 
         self.itemPrototype = QtGui.QStandardItem('')
         self.itemPrototype.setSizeHint(QtCore.QSize(100, 24))
