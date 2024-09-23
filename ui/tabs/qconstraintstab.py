@@ -94,7 +94,7 @@ class QConstraintsTab(qabstracttab.QAbstractTab):
         self.scaleXYZWidget.setStyleSheet('QPushButton:hover:checked { background-color: green; }\nQPushButton:checked { background-color: darkgreen; border: none; }')
         self.scaleXYZWidget.setCheckStates([False, False, False])
 
-        self.pointPushButton = QtWidgets.QPushButton('Point')
+        self.pointPushButton = QtWidgets.QPushButton(QtGui.QIcon(':/out_pointConstraint.png'), 'Point')
         self.pointPushButton.setObjectName('pointPushButton')
         self.pointPushButton.setWhatsThis('pointConstraint')
         self.pointPushButton.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed))
@@ -102,7 +102,7 @@ class QConstraintsTab(qabstracttab.QAbstractTab):
         self.pointPushButton.setFocusPolicy(QtCore.Qt.NoFocus)
         self.pointPushButton.clicked.connect(self.on_constraintPushButton_clicked)
         
-        self.orientPushButton = QtWidgets.QPushButton('Orient')
+        self.orientPushButton = QtWidgets.QPushButton(QtGui.QIcon(':/out_orientConstraint.png'), 'Orient')
         self.orientPushButton.setObjectName('orientPushButton')
         self.orientPushButton.setWhatsThis('orientConstraint')
         self.orientPushButton.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed))
@@ -110,7 +110,7 @@ class QConstraintsTab(qabstracttab.QAbstractTab):
         self.orientPushButton.setFocusPolicy(QtCore.Qt.NoFocus)
         self.orientPushButton.clicked.connect(self.on_constraintPushButton_clicked)
         
-        self.scalePushButton = QtWidgets.QPushButton('Scale')
+        self.scalePushButton = QtWidgets.QPushButton(QtGui.QIcon(':/out_scaleConstraint.png'), 'Scale')
         self.scalePushButton.setObjectName('scalePushButton')
         self.scalePushButton.setWhatsThis('scaleConstraint')
         self.scalePushButton.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed))
@@ -118,7 +118,7 @@ class QConstraintsTab(qabstracttab.QAbstractTab):
         self.scalePushButton.setFocusPolicy(QtCore.Qt.NoFocus)
         self.scalePushButton.clicked.connect(self.on_constraintPushButton_clicked)
         
-        self.aimPushButton = QtWidgets.QPushButton('Aim')
+        self.aimPushButton = QtWidgets.QPushButton(QtGui.QIcon(':/out_aimConstraint.png'), 'Aim')
         self.aimPushButton.setObjectName('aimPushButton')
         self.aimPushButton.setWhatsThis('aimConstraint')
         self.aimPushButton.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed))
@@ -126,7 +126,7 @@ class QConstraintsTab(qabstracttab.QAbstractTab):
         self.aimPushButton.setFocusPolicy(QtCore.Qt.NoFocus)
         self.aimPushButton.clicked.connect(self.on_constraintPushButton_clicked)
         
-        self.parentPushButton = QtWidgets.QPushButton('Parent')
+        self.parentPushButton = QtWidgets.QPushButton(QtGui.QIcon(':/out_parentConstraint.png'), 'Parent')
         self.parentPushButton.setObjectName('parentPushButton')
         self.parentPushButton.setWhatsThis('parentConstraint')
         self.parentPushButton.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed))
@@ -134,7 +134,7 @@ class QConstraintsTab(qabstracttab.QAbstractTab):
         self.parentPushButton.setFocusPolicy(QtCore.Qt.NoFocus)
         self.parentPushButton.clicked.connect(self.on_constraintPushButton_clicked)
         
-        self.transformPushButton = QtWidgets.QPushButton('Transform')
+        self.transformPushButton = QtWidgets.QPushButton(QtGui.QIcon(':/out_transformConstraint.png'), 'Transform')
         self.transformPushButton.setObjectName('transformPushButton')
         self.transformPushButton.setWhatsThis('transformConstraint')
         self.transformPushButton.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed))
@@ -142,7 +142,7 @@ class QConstraintsTab(qabstracttab.QAbstractTab):
         self.transformPushButton.setFocusPolicy(QtCore.Qt.NoFocus)
         self.transformPushButton.clicked.connect(self.on_constraintPushButton_clicked)
         
-        self.pointOnCurvePushButton = QtWidgets.QPushButton('Point on Curve')
+        self.pointOnCurvePushButton = QtWidgets.QPushButton(QtGui.QIcon(':/out_pointOnCurveConstraint.png'), 'Point on Curve')
         self.pointOnCurvePushButton.setObjectName('pointOnCurvePushButton')
         self.pointOnCurvePushButton.setWhatsThis('pointOnCurveConstraint')
         self.pointOnCurvePushButton.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed))
@@ -150,7 +150,7 @@ class QConstraintsTab(qabstracttab.QAbstractTab):
         self.pointOnCurvePushButton.setFocusPolicy(QtCore.Qt.NoFocus)
         self.pointOnCurvePushButton.clicked.connect(self.on_pointOnCurvePushButton_clicked)
         
-        self.pointOnPolyPushButton = QtWidgets.QPushButton('Point on Poly')
+        self.pointOnPolyPushButton = QtWidgets.QPushButton(QtGui.QIcon(':/out_pointOnPolyConstraint.png'), 'Point on Poly')
         self.pointOnPolyPushButton.setObjectName('pointOnPolyPushButton')
         self.pointOnPolyPushButton.setWhatsThis('pointOnPolyConstraint')
         self.pointOnPolyPushButton.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed))
@@ -158,7 +158,7 @@ class QConstraintsTab(qabstracttab.QAbstractTab):
         self.pointOnPolyPushButton.setFocusPolicy(QtCore.Qt.NoFocus)
         self.pointOnPolyPushButton.clicked.connect(self.on_pointOnPolyPushButton_clicked)
         
-        self.skinPushButton = QtWidgets.QPushButton('Skin')
+        self.skinPushButton = QtWidgets.QPushButton(QtGui.QIcon(':/out_skinConstraint.png'), 'Skin')
         self.skinPushButton.setObjectName('skinPushButton')
         self.skinPushButton.setWhatsThis('transformConstraint')
         self.skinPushButton.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed))
@@ -216,28 +216,28 @@ class QConstraintsTab(qabstracttab.QAbstractTab):
         self.constraintComboBox.setFocusPolicy(QtCore.Qt.NoFocus)
         self.constraintComboBox.currentIndexChanged.connect(self.on_constraintComboBox_currentIndexChanged)
 
-        self.addTargetPushButton = QtWidgets.QPushButton('Add Target')
+        self.addTargetPushButton = QtWidgets.QPushButton(QtGui.QIcon(':/dcc/icons/add.svg'), 'Add Target')
         self.addTargetPushButton.setObjectName('addTargetPushButton')
         self.addTargetPushButton.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed))
         self.addTargetPushButton.setFixedHeight(24)
         self.addTargetPushButton.setFocusPolicy(QtCore.Qt.NoFocus)
         self.addTargetPushButton.clicked.connect(self.on_addTargetPushButton_clicked)
 
-        self.removeTargetPushButton = QtWidgets.QPushButton('Remove Target')
+        self.removeTargetPushButton = QtWidgets.QPushButton(QtGui.QIcon(':/dcc/icons/remove.svg'), 'Remove Target')
         self.removeTargetPushButton.setObjectName('removeTargetPushButton')
         self.removeTargetPushButton.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed))
         self.removeTargetPushButton.setFixedHeight(24)
         self.removeTargetPushButton.setFocusPolicy(QtCore.Qt.NoFocus)
         self.removeTargetPushButton.clicked.connect(self.on_removeTargetPushButton_clicked)
 
-        self.renameTargetPushButton = QtWidgets.QPushButton('Rename Target')
+        self.renameTargetPushButton = QtWidgets.QPushButton(QtGui.QIcon(':/dcc/icons/rename.svg'), 'Rename Target')
         self.renameTargetPushButton.setObjectName('renameTargetPushButton')
         self.renameTargetPushButton.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed))
         self.renameTargetPushButton.setFixedHeight(24)
         self.renameTargetPushButton.setFocusPolicy(QtCore.Qt.NoFocus)
         self.renameTargetPushButton.clicked.connect(self.on_renameTargetPushButton_clicked)
 
-        self.selectTargetPushButton = QtWidgets.QPushButton('Select Target')
+        self.selectTargetPushButton = QtWidgets.QPushButton(QtGui.QIcon(':/dcc/icons/select.png'), 'Select Target')
         self.selectTargetPushButton.setObjectName('selectTargetPushButton')
         self.selectTargetPushButton.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed))
         self.selectTargetPushButton.setFixedHeight(24)
