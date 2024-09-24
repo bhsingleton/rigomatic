@@ -140,7 +140,7 @@ class QPublishTab(qabstracttab.QAbstractTab):
         self.skeletalMeshesCheckBox.setChecked(True)
 
         self.optionsButtonGroup = QtWidgets.QButtonGroup(parent=self)
-        self.optionsButtonGroup.setObjectName('')
+        self.optionsButtonGroup.setObjectName('optionsButtonGroup')
         self.optionsButtonGroup.setExclusive(False)
         self.optionsButtonGroup.addButton(self.sceneSettingsCheckBox, id=0)
         self.optionsButtonGroup.addButton(self.fbxSettingsCheckBox, id=1)
