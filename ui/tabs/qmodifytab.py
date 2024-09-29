@@ -154,7 +154,7 @@ class QModifyTab(qabstracttab.QAbstractTab):
         self.freezePivotsPushButton.setFocusPolicy(QtCore.Qt.NoFocus)
         self.freezePivotsPushButton.clicked.connect(self.on_freezePivotsPushButton_clicked)
 
-        self.meltPivotsPushButton = QtWidgets.QPushButton('Freeze (Pivot)')
+        self.meltPivotsPushButton = QtWidgets.QPushButton('Melt (Pivot)')
         self.meltPivotsPushButton.setObjectName('meltPivotsPushButton')
         self.meltPivotsPushButton.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed))
         self.meltPivotsPushButton.setFixedHeight(24)
