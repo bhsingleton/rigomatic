@@ -753,20 +753,22 @@ class QRigomatic(qsingletonwindow.QSingletonWindow):
 
         # Evaluate active selection
         #
-        name = None
-        namespace = -1
+        name = ''
+        namespaceIndex = -1
+        placeholderText =  f'{self.selectionCount} Nodes Selected'
 
         if self.selectedNode is not None:
 
-            name = self.selectedNode.name()
-            namespace = self.namespaceComboBox.findText(self.selectedNode.namespace())
+            name = self.selectedNode.name() if (self.selectionCount == 1) else ''
+            namespaceIndex = self.namespaceComboBox.findText(self.selectedNode.namespace())
 
         # Update name widgets
         #
-        with qsignalblocker.QSignalBlocker(self.namespaceComboBox), qsignalblocker.QSignalBlocker(self.nameLineEdit):
+        with qsignalblocker.QSignalBlocker(self.namespaceComboBox, self.nameLineEdit):
 
-            self.namespaceComboBox.setCurrentIndex(namespace)
+            self.namespaceComboBox.setCurrentIndex(namespaceIndex)
             self.nameLineEdit.setText(name)
+            self.nameLineEdit.setPlaceholderText(placeholderText)
 
     def invalidateNamespaces(self):
         """
