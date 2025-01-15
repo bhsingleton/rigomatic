@@ -99,7 +99,7 @@ class QShapesTab(qabstracttab.QAbstractTab):
 
         self.createGroupBox = QtWidgets.QGroupBox('')
         self.createGroupBox.setObjectName('createGroupBox')
-        self.createGroupBox.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed))
+        self.createGroupBox.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding))
         self.createGroupBox.setFocusPolicy(QtCore.Qt.NoFocus)
         self.createGroupBox.setLayout(self.createLayout)
 
@@ -219,12 +219,12 @@ class QShapesTab(qabstracttab.QAbstractTab):
         self.renameShapesPushButton.setFocusPolicy(QtCore.Qt.NoFocus)
         self.renameShapesPushButton.clicked.connect(self.on_renameShapesPushButton_clicked)
 
-        self.removeShapesPushButton = QtWidgets.QPushButton('Remove Shapes')
-        self.removeShapesPushButton.setObjectName('removeShapesPushButton')
-        self.removeShapesPushButton.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed))
-        self.removeShapesPushButton.setFixedHeight(24)
-        self.removeShapesPushButton.setFocusPolicy(QtCore.Qt.NoFocus)
-        self.removeShapesPushButton.clicked.connect(self.on_removeShapesPushButton_clicked)
+        self.mirrorShapesPushButton = QtWidgets.QPushButton('Mirror Shapes')
+        self.mirrorShapesPushButton.setObjectName('mirrorShapesPushButton')
+        self.mirrorShapesPushButton.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed))
+        self.mirrorShapesPushButton.setFixedHeight(24)
+        self.mirrorShapesPushButton.setFocusPolicy(QtCore.Qt.NoFocus)
+        self.mirrorShapesPushButton.clicked.connect(self.on_mirrorShapesPushButton_clicked)
 
         self.reparentShapesPushButton = QtWidgets.QPushButton('Reparent Shapes')
         self.reparentShapesPushButton.setObjectName('reparentShapesPushButton')
@@ -239,6 +239,13 @@ class QShapesTab(qabstracttab.QAbstractTab):
         self.preservePositionCheckBox.setFixedHeight(24)
         self.preservePositionCheckBox.setFocusPolicy(QtCore.Qt.NoFocus)
 
+        self.removeShapesPushButton = QtWidgets.QPushButton('Remove Shapes')
+        self.removeShapesPushButton.setObjectName('removeShapesPushButton')
+        self.removeShapesPushButton.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed))
+        self.removeShapesPushButton.setFixedHeight(24)
+        self.removeShapesPushButton.setFocusPolicy(QtCore.Qt.NoFocus)
+        self.removeShapesPushButton.clicked.connect(self.on_removeShapesPushButton_clicked)
+
         self.createLayout.addLayout(self.filterLayout, 0, 0, 1, 2)
         self.createLayout.addWidget(self.shapeListView, 1, 0, 1, 2)
         self.createLayout.addWidget(self.createCustomPushButton, 2, 0)
@@ -249,10 +256,12 @@ class QShapesTab(qabstracttab.QAbstractTab):
         self.createLayout.addWidget(self.edgeToHelperPushButton, 5, 0)
         self.createLayout.addWidget(self.offsetSpinBox, 5, 1)
         self.createLayout.addWidget(qdivider.QDivider(QtCore.Qt.Horizontal), 6, 0, 1, 2)
-        self.createLayout.addWidget(self.renameShapesPushButton)
-        self.createLayout.addWidget(self.removeShapesPushButton)
-        self.createLayout.addWidget(self.reparentShapesPushButton)
-        self.createLayout.addWidget(self.preservePositionCheckBox)
+        self.createLayout.addWidget(self.renameShapesPushButton, 7, 0)
+        self.createLayout.addWidget(self.mirrorShapesPushButton, 7, 1)
+        self.createLayout.addWidget(self.reparentShapesPushButton, 8, 0)
+        self.createLayout.addWidget(self.preservePositionCheckBox, 8, 1)
+        self.createLayout.addWidget(qdivider.QDivider(QtCore.Qt.Horizontal), 9, 0, 1, 2)
+        self.createLayout.addWidget(self.removeShapesPushButton, 10, 0, 1, 2)
 
         centralLayout.addWidget(self.createGroupBox)
 
@@ -552,7 +561,7 @@ class QShapesTab(qabstracttab.QAbstractTab):
         self.dimensionsLayout.addWidget(self.depthLabel)
         self.dimensionsLayout.addWidget(self.depthSpinBox)
 
-        self.fitPushButton = QtWidgets.QPushButton('Reset')
+        self.fitPushButton = QtWidgets.QPushButton('Fit')
         self.fitPushButton.setObjectName('fitPushButton')
         self.fitPushButton.setSizePolicy(QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed))
         self.fitPushButton.setFixedHeight(24)
@@ -1029,6 +1038,109 @@ class QShapesTab(qabstracttab.QAbstractTab):
             # Rename shapes under transform
             #
             node.renameShapes()
+
+    @undo.Undo(name='Mirror Shapes')
+    def mirrorShapes(self, *nodes):
+        """
+        Mirrors all the shapes on the supplied nodes.
+
+        :type nodes: Union[mpynode.MPyNode, List[mpynode.MPyNode]]
+        :rtype: None
+        """
+
+        # Iterate through nodes
+        #
+        for node in nodes:
+
+            # Check if this is a transform node
+            #
+            if not node.hasFn(om.MFn.kTransform):
+
+                continue
+
+            # Check if opposite node exists
+            #
+            oppositeNode = node.getOppositeNode()
+            hasOppositeNode = oppositeNode is not node
+
+            if not hasOppositeNode:
+
+                log.warning(f'Unable to find node opposite to {node}!')
+                continue
+
+            # Check if shape counts match
+            #
+            numShapes = node.numberOfShapesDirectlyBelow()
+            requiredShapes = oppositeNode.numberOfShapesDirectlyBelow()
+
+            if numShapes != requiredShapes:
+
+                log.warning(f'Shape count mismatch between {node} and {oppositeNode}!')
+                continue
+
+            # Iterate through shapes
+            #
+            for (shape, oppositeShape) in zip(node.shapes(), oppositeNode.shapes()):
+
+                # Check if shape types match
+                #
+                hasSameType = shape.apiType() == oppositeShape.apiType()
+
+                if not hasSameType:
+
+                    log.warning(f'Unable to mirror {shape} to {oppositeShape}!')
+                    continue
+
+                # Evaluate shape type
+                #
+                isLocator = shape.hasFn(om.MFn.kLocator)
+                isNurbsCurve = shape.hasFn(om.MFn.kNurbsCurve) or shape.hasFn(om.MFn.kBezierCurve)
+
+                mirrorTranslateX = node.userProperties.get('mirrorTranslateX', False)
+                mirrorTranslateY = node.userProperties.get('mirrorTranslateY', False)
+                mirrorTranslateZ = node.userProperties.get('mirrorTranslateZ', False)
+                
+                mirrorRotateX = node.userProperties.get('mirrorRotateX', False)
+                mirrorRotateY = node.userProperties.get('mirrorRotateY', False)
+                mirrorRotateZ = node.userProperties.get('mirrorRotateZ', False)
+                
+                if isLocator:
+                    
+                    localPositionX = -shape.localPositionX if mirrorTranslateX else shape.localPositionX
+                    localPositionY = -shape.localPositionY if mirrorTranslateY else shape.localPositionY
+                    localPositionZ = -shape.localPositionZ if mirrorTranslateZ else shape.localPositionZ
+                    oppositeShape.localPosition = (localPositionX, localPositionY, localPositionZ)
+                    oppositeShape.localScale = shape.localScale
+
+                    isHelper = shape.hasFn(om.MFn.kPluginLocatorNode)
+
+                    if isHelper:
+
+                        localRotateX = -shape.localRotateX if mirrorRotateX else shape.localRotateX
+                        localRotateY = -shape.localRotateY if mirrorRotateY else shape.localRotateY
+                        localRotateZ = -shape.localRotateZ if mirrorRotateZ else shape.localRotateZ
+                        oppositeShape.localRotate = (localRotateX, localRotateY, localRotateZ)
+
+                        for attribute in shape.listAttr(category='Drawable'):
+
+                            oppositeShape.setAttr(attribute, shape.getAttr(attribute))
+
+                elif isNurbsCurve:
+
+                    controlPoints = shape.controlPoints()
+
+                    for controlPoint in controlPoints:
+
+                        controlPoint.x *= -1.0 if mirrorTranslateX else 1.0
+                        controlPoint.y *= -1.0 if mirrorTranslateY else 1.0
+                        controlPoint.z *= -1.0 if mirrorTranslateZ else 1.0
+
+                    oppositeShape.setControlPoints(controlPoints)
+
+                else:
+
+                    log.warning(f'Unable to mirror {shape.typeName} types!')
+                    continue
 
     @undo.Undo(name='Remove Shapes')
     def removeShapes(self, *nodes):
@@ -1687,6 +1799,24 @@ class QShapesTab(qabstracttab.QAbstractTab):
         else:
 
             log.warning(self, 'Add Helper', 'No controls selected to rename shapes on!')
+
+    @QtCore.Slot()
+    def on_mirrorShapesPushButton_clicked(self):
+        """
+        Slot method for the `renameShapesPushButton` widget's `clicked` signal.
+
+        :rtype: None
+        """
+
+        # Evaluate active selection
+        #
+        if self.selectionCount > 0:
+
+            self.mirrorShapes(*self.selection)
+
+        else:
+
+            log.warning(self, 'Add Helper', 'No controls selected to mirror shapes on!')
 
     @QtCore.Slot()
     def on_removeShapesPushButton_clicked(self):
