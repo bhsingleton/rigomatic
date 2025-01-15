@@ -1107,12 +1107,22 @@ class QPublishTab(qabstracttab.QAbstractTab):
 
             # Evaluate intermediate objects
             #
-            intermediateObjects = node.intermediateObjects()
+            intermediateObjects = [intermediate for intermediate in node.intermediateObjects() if intermediate.canBeWritten()]
             numIntermediateObjects = len(intermediateObjects)
 
             if numIntermediateObjects > 1:
 
                 self.warning(f'"{meshName}" has more than one intermediate object!')
+                errors.add(mesh)
+
+            # Evaluate connected shaders
+            #
+            shaders, faceShaderIndices = mesh.getConnectedShaders(mesh.instanceNumber())
+            hasMissingShaders = -1 in set(faceShaderIndices)
+
+            if hasMissingShaders:
+
+                self.warning(f'"{meshName}" skeletal mesh has missing shaders!')
                 errors.add(mesh)
 
             # Evaluate skin clusters
@@ -1180,6 +1190,26 @@ class QPublishTab(qabstracttab.QAbstractTab):
 
                     continue  # No further testing required!
 
+                # Evaluate pre-rotations
+                #
+                preEulerRotation = descendant.preEulerRotation()
+                isIdentity = preEulerRotation.isEquivalent(om.MEulerRotation.kIdentity, tolerance=1e-3)
+
+                if not isIdentity:
+
+                    self.warning(f'"{descendantName}" joint contains non-zero orientations!')
+                    errors.add(descendant)
+
+                # Evaluate offset parent matrix
+                #
+                offsetParentMatrix = descendant.offsetParentMatrix()
+                hasOffset = not offsetParentMatrix.isEquivalent(om.MMatrix.kIdentity, tolerance=1e-3)
+
+                if hasOffset:
+
+                    self.warning(f'"{descendantName}" joint contains an offset parent matrix!')
+                    errors.add(descendant)
+
                 # Evaluate bind pose
                 #
                 hasBindPose = descendant in influenceObjects
@@ -1200,16 +1230,6 @@ class QPublishTab(qabstracttab.QAbstractTab):
                 else:
 
                     continue  # No further testing required!
-
-                # Evaluate pre-rotations
-                #
-                preEulerRotation = descendant.preEulerRotation()
-                isIdentity = preEulerRotation.isEquivalent(om.MEulerRotation.kIdentity, tolerance=1e-3)
-
-                if not isIdentity:
-
-                    self.warning(f'"{descendantName}" joint contains non-zero orientations!')
-                    errors.add(descendant)
 
             skeletalMeshCount += 1
 
