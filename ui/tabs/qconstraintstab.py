@@ -508,10 +508,17 @@ class QConstraintsTab(qabstracttab.QAbstractTab):
         :rtype: mpynode.MPyNode
         """
 
-        # Get skin deformer from mesh
+        # Get mesh from target
         #
         mesh = target.shape()
 
+        if mesh is None:
+
+            log.error(f'addSkinConstraint() requires a mesh!')
+            return
+
+        # Get skin deformer from mesh
+        #
         skins = mesh.getDeformersByType(om.MFn.kSkinClusterFilter)
         numSkins = len(skins)
 
