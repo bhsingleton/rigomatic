@@ -129,6 +129,10 @@ def recolorNodes(*nodes, color=(0.0, 0.0, 0.0), colorMode=ColorMode.NONE):
                 shape.useObjectColor = 2
                 shape.wireColorRGB = color
 
+                if shape.overrideEnabled:
+
+                    log.warning('Cannot set wire-colour while drawing overrides are enabled!')
+
             elif colorMode == ColorMode.OVERRIDE_COLOR_RGB:
 
                 shape.overrideEnabled = True
