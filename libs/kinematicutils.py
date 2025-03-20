@@ -189,7 +189,7 @@ def applySpringSolver(startJoint, endJoint):
     :rtype: Tuple[mpynode.MPyNode, mpynode.MPyNode]
     """
 
-    # Create IK nodes
+    # Create IK handle and effector
     #
     scene = mpyscene.MPyScene()
 
@@ -198,12 +198,97 @@ def applySpringSolver(startJoint, endJoint):
 
     effector = applyEffector(endJoint)
 
-    # Connect IK attributes
+    # Add spring rest attributes
+    #
+    ikHandle.addAttr(
+        longName='springRestPose',
+        shortName='srp',
+        attributeType='long',
+        default=1,
+        cachedInternally=True,
+        hidden=True
+    )
+
+    ikHandle.addAttr(
+        longName='springRestPoleVector',
+        shortName='srpv',
+        attributeType='double3',
+        cachedInternally=True,
+        hidden=True,
+        children=[
+            {
+                'longName': 'springRestPoleVectorX',
+                'shortName': 'srpvx',
+                'attributeType': 'float',
+                'cachedInternally': True,
+                'hidden': True
+            },
+            {
+                'longName': 'springRestPoleVectorY',
+                'shortName': 'srpvy',
+                'attributeType': 'float',
+                'cachedInternally': True,
+                'hidden': True
+            },
+            {
+                'longName': 'springRestPoleVectorZ',
+                'shortName': 'srpvz',
+                'attributeType': 'float',
+                'cachedInternally': True,
+                'hidden': True
+            }
+        ]
+    )
+
+    ikHandle.addAttr(
+        longName='springAngleBias',
+        shortName='sab',
+        attributeType='compound',
+        cachedInternally=True,
+        multi=True,
+        children=[
+            {
+                'longName': 'springAngleBias_Position',
+                'shortName': 'sbp',
+                'attributeType': 'float',
+                'cachedInternally': True
+            },
+            {
+                'longName': 'springAngleBias_FloatValue',
+                'shortName': 'sbfv',
+                'attributeType': 'float',
+                'default': 1.0,
+                'cachedInternally': True
+            },
+            {
+                'longName': 'springAngleBias_Interp',
+                'shortName': 'sbi',
+                'attributeType': 'enum',
+                'min': 0,
+                'max': 3,
+                'default': 3,
+                'fields': 'None:Linear:Smooth:Spline',
+                'cachedInternally': True
+            }
+        ]
+    )
+
+    forwardVector = (endJoint.translation(space=om.MSpace.kWorld) - startJoint.translation(space=om.MSpace.kWorld)).normal()
+    rightVector = transformutils.breakMatrix(startJoint.worldMatrix(), normalize=True)[2]
+    poleVector = (forwardVector ^ rightVector).normal()
+
+    ikHandle.setAttr('poleVector', poleVector)
+    ikHandle.setAttr('rootOnCurve', True)
+    ikHandle.setAttr('springRestPoleVector', poleVector)
+    ikHandle.setAttr('springAngleBias', [(0, 0.5, 3), (1, 0.5, 3)])
+    ikHandle.lockAttr('springAngleBias[0].springAngleBias_Position', 'springAngleBias[1].springAngleBias_Position')
+
+    # Connect joint chain and effector to IK handle
     #
     startJoint.connectPlugs('message', ikHandle['startJoint'])
     effector.connectPlugs(f'handlePath[{effector.instanceNumber()}]', ikHandle['endEffector'])
 
-    # Get rotation plane solver
+    # Connect IK handle to rotation plane solver
     #
     solver = getIkSolver(IkSolver.Spring)
     solver.connectPlugs('message', ikHandle['ikSolver'])
@@ -248,7 +333,7 @@ def applySplineSolver(startJoint, endJoint, curve):
 def solveIk2BoneChain(startPoint, startLength, endPoint, endLength, poleVector, twist=0.0):
     """
     Solves for a 2-bone chain using the supplied variables.
-    This method assumes that X is forward and Y is up.
+    This method assumes that X is forward and -Y is up.
     Be sure to reorient these transforms in case your joint chain does not follow this convention.
 
     :type startPoint: om.MPoint
@@ -265,7 +350,7 @@ def solveIk2BoneChain(startPoint, startLength, endPoint, endLength, poleVector, 
     twistMatrix = transformutils.createRotationMatrix([twist, 0.0, 0.0])
 
     forwardVector = om.MVector(endPoint - startPoint).normal()
-    aimMatrix = twistMatrix * transformutils.createAimMatrix(0, forwardVector, 1, poleVector, startPoint=startPoint)
+    aimMatrix = twistMatrix * transformutils.createAimMatrix(0, forwardVector, 1, poleVector, origin=startPoint, upAxisSign=-1)
 
     # Calculate angles
     # Be sure to compensate for hyper-extension!
@@ -280,8 +365,8 @@ def solveIk2BoneChain(startPoint, startLength, endPoint, endLength, poleVector, 
         startRadian = math.acos((pow(startLength, 2.0) + pow(aimLength, 2.0) - pow(endLength, 2.0)) / (2.0 * startLength * aimLength))
         endRadian = math.acos((pow(endLength, 2.0) + pow(startLength, 2.0) - pow(aimLength, 2.0)) / (2.0 * endLength * startLength))
 
-        matrices[0] = om.MEulerRotation(0.0, 0.0, startRadian).asMatrix() * aimMatrix
-        matrices[1] = om.MEulerRotation(0.0, 0.0, -(math.pi - endRadian)).asMatrix() * transformutils.createTranslateMatrix([startLength, 0.0, 0.0]) * matrices[0]
+        matrices[0] = om.MEulerRotation(0.0, 0.0, -startRadian).asMatrix() * aimMatrix
+        matrices[1] = om.MEulerRotation(0.0, 0.0, (math.pi - endRadian)).asMatrix() * transformutils.createTranslateMatrix([startLength, 0.0, 0.0]) * matrices[0]
         matrices[2] = transformutils.createTranslateMatrix([endLength, 0.0, 0.0]) * matrices[1]
 
     else:
