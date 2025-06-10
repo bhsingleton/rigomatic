@@ -180,6 +180,39 @@ def applyRotationPlaneSolver(startJoint, endJoint):
     return ikHandle, effector
 
 
+def iterInbetweenJoints(startJoint, endJoint, includeStart=False, includeEnd=False):
+    """
+    Returns a generator that yields inbetween joints.
+
+    :type startJoint: mpynode.MPyNode
+    :type endJoint: mpynode.MPyNode
+    :type includeStart: bool
+    :type includeEnd: bool
+    :rtype: Iterator[mpynode.MPyNode]
+    """
+
+    ancestors = endJoint.ancestors(apiType=om.MFn.kJoint)
+
+    try:
+
+        index = ancestors.index(startJoint)
+        inbetweenJoints = list(reversed(ancestors[:index]))
+
+        if includeStart:
+
+            yield startJoint
+
+        yield from inbetweenJoints
+
+        if includeEnd:
+
+            yield endJoint
+
+    except ValueError:
+
+        return iter([])
+
+
 def applySpringSolver(startJoint, endJoint):
     """
     Assigns a spring solver to the supplied joints.
@@ -282,6 +315,15 @@ def applySpringSolver(startJoint, endJoint):
     ikHandle.setAttr('springRestPoleVector', poleVector)
     ikHandle.setAttr('springAngleBias', [(0, 0.5, 3), (1, 0.5, 3)])
     ikHandle.lockAttr('springAngleBias[0].springAngleBias_Position', 'springAngleBias[1].springAngleBias_Position')
+
+    # Update preferred rotations
+    #
+    joints = list(iterInbetweenJoints(startJoint, endJoint, includeEnd=True))
+    startJoint.preferEulerRotation()
+
+    for joint in joints:
+
+        joint.preferEulerRotation(skipPreferredAngleX=True, skipPreferredAngleY=True)
 
     # Connect joint chain and effector to IK handle
     #
