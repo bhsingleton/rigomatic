@@ -13,13 +13,16 @@ log.setLevel(logging.INFO)
 
 class IkSolver(IntEnum):
     """
-    Enum class of all the available IK systems.
+    Enum class of all the available IK solvers.
     """
 
-    SingleChain = 0
-    RotationPlane = 1
-    Spline = 2
-    Spring = 3
+    SINGLE_CHAIN = om.MFn.kSCsolver
+    ROTATION_PLANE = om.MFn.kRPsolver
+    SPLINE = om.MFn.kSplineSolver
+    SPRING = om.MFn.kPluginIkSolver
+    HUMAN = om.MFn.kHikSolver
+    MULTIPLE = om.MFn.kMCsolver
+
 
 
 def getIkSolver(solver):
@@ -34,7 +37,7 @@ def getIkSolver(solver):
     #
     scene = mpyscene.MPyScene()
 
-    if solver == IkSolver.SingleChain:
+    if solver == IkSolver.SINGLE_CHAIN:
 
         # Check if solver already exists
         #
@@ -46,7 +49,7 @@ def getIkSolver(solver):
 
             return scene.createNode('ikSCsolver', name='ikSCsolver')
 
-    elif solver == IkSolver.RotationPlane:
+    elif solver == IkSolver.ROTATION_PLANE:
 
         # Check if solver already exists
         #
@@ -58,7 +61,7 @@ def getIkSolver(solver):
 
             return scene.createNode('ikRPsolver', name='ikRPsolver')
 
-    elif solver == IkSolver.Spline:
+    elif solver == IkSolver.SPLINE:
 
         # Check if solver already exists
         #
@@ -70,7 +73,7 @@ def getIkSolver(solver):
 
             return scene.createNode('ikSplineSolver', name='ikSplineSolver')
 
-    elif solver == IkSolver.Spring:
+    elif solver == IkSolver.SPRING:
 
         # Check if solver already exists
         #
@@ -143,7 +146,7 @@ def applySingleChainSolver(startJoint, endJoint):
 
     # Get rotation plane solver
     #
-    solver = getIkSolver(IkSolver.SingleChain)
+    solver = getIkSolver(IkSolver.SINGLE_CHAIN)
     solver.connectPlugs('message', ikHandle['ikSolver'])
 
     return ikHandle, effector
@@ -167,6 +170,16 @@ def applyRotationPlaneSolver(startJoint, endJoint):
 
     effector = applyEffector(endJoint)
 
+    # Update preferred rotation
+    #
+    joints = list(iterInbetweenJoints(startJoint, endJoint))
+    startJoint.preferEulerRotation()
+
+    for joint in joints:
+
+        joint.preferEulerRotation(skipPreferredAngleX=True, skipPreferredAngleY=True)
+        log.debug(f'"{joint.name()}.preferredAngle" = {joint.preferredAngle}')
+
     # Connect IK attributes
     #
     startJoint.connectPlugs('message', ikHandle['startJoint'])
@@ -174,7 +187,7 @@ def applyRotationPlaneSolver(startJoint, endJoint):
 
     # Get rotation plane solver
     #
-    solver = getIkSolver(IkSolver.RotationPlane)
+    solver = getIkSolver(IkSolver.ROTATION_PLANE)
     solver.connectPlugs('message', ikHandle['ikSolver'])
 
     return ikHandle, effector
@@ -306,6 +319,8 @@ def applySpringSolver(startJoint, endJoint):
         ]
     )
 
+    # Update IK handle properties
+    #
     forwardVector = (endJoint.translation(space=om.MSpace.kWorld) - startJoint.translation(space=om.MSpace.kWorld)).normal()
     rightVector = transformutils.breakMatrix(startJoint.worldMatrix(), normalize=True)[2]
     poleVector = (forwardVector ^ rightVector).normal()
@@ -318,7 +333,7 @@ def applySpringSolver(startJoint, endJoint):
 
     # Update preferred rotations
     #
-    joints = list(iterInbetweenJoints(startJoint, endJoint, includeEnd=True))
+    joints = list(iterInbetweenJoints(startJoint, endJoint))
     startJoint.preferEulerRotation()
 
     for joint in joints:
@@ -332,7 +347,7 @@ def applySpringSolver(startJoint, endJoint):
 
     # Connect IK handle to rotation plane solver
     #
-    solver = getIkSolver(IkSolver.Spring)
+    solver = getIkSolver(IkSolver.SPRING)
     solver.connectPlugs('message', ikHandle['ikSolver'])
 
     return ikHandle, effector
@@ -366,7 +381,7 @@ def applySplineSolver(startJoint, endJoint, curve):
 
     # Get rotation plane solver
     #
-    solver = getIkSolver(IkSolver.Spline)
+    solver = getIkSolver(IkSolver.SPLINE)
     solver.connectPlugs('message', ikHandle['ikSolver'])
 
     return ikHandle, effector
@@ -493,6 +508,27 @@ def calculatePoleVector(nodes):
     crossProduct = om.MVector(midPoint - startPoint).normal() ^ om.MVector(endPoint - startPoint).normal()
 
     return forwardVector ^ crossProduct
+
+
+def fit2BoneIKto3BoneIK(points):
+        """
+        Returns the position for the 3-bone IK hack.
+
+        :type points: List[Union[Tuple[float, float, float], om.MVector, om.MPoint]]
+        :rtype: om.MPoint
+        """
+
+        chainLength = sum([om.MPoint(start).distanceTo(end) for (start, end) in zip(points[:-1], points[1:])])
+        initialVector = (points[1] - points[0]).normal()
+        aimVector = points[-1] - points[0]
+
+        length = ((aimVector * aimVector) - (pow(chainLength, 2.0))) / (2.0 * ((aimVector * initialVector) - chainLength))
+
+        return [
+            points[0],
+            points[0] + (initialVector * length),
+            points[3],
+        ]
 
 
 def inverseToForward(fkNodes, startEffector, endEffector, poleVector=None):
