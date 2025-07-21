@@ -203,7 +203,7 @@ def createIntermediate(*nodes):
         typeName = node.typeName
 
         parent = scene.createNode(typeName, name='group1', parent=ancestor)
-        parent.copyTransform(node)
+        parent.copyTransform(node, skipScale=True)
 
         # Re-parent node
         #
