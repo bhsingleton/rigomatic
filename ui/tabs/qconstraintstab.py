@@ -479,7 +479,7 @@ class QConstraintsTab(qabstracttab.QAbstractTab):
         :type node: mpynode.MPyNode
         :type typeName: str
         :type targets: List[mpynode.MPyNode]
-        :key maintainOffset: bool
+        :type maintainOffset: bool
         :rtype: mpynode.MPyNode
         """
 
@@ -548,7 +548,7 @@ class QConstraintsTab(qabstracttab.QAbstractTab):
 
         # Add transform constraint
         #
-        constraint = node.addConstraint('transformConstraint', targets, **kwargs)
+        constraint = node.addConstraint('transformConstraint', targets, force=True, **kwargs)
 
         for (i, target) in enumerate(constraint.iterTargets()):
 
