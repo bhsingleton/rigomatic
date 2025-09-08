@@ -912,7 +912,7 @@ class QShapesTab(qabstracttab.QAbstractTab):
         #
         if parent is None:
 
-            name = name if self.scene.isNameUnique(name) else ''
+            name = name if self.scene.isNameAvailable(name) else ''
             parent = self.scene.createNode('transform', name=name)
 
         # Evaluate parent type

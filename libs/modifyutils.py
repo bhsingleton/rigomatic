@@ -21,7 +21,7 @@ def renameNode(node, name):
 
     scene = mpyscene.MPyScene()
 
-    if scene.isNameUnique(name):
+    if scene.isNameAvailable(name):
 
         node.setName(name)
         return True

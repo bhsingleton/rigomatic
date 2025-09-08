@@ -29,7 +29,7 @@ def createNode(typeName, **kwargs):
     scene = mpyscene.MPyScene()
 
     name = stringutils.slugify(kwargs.get('name', ''))
-    uniqueName = name if scene.isNameUnique(name) and not stringutils.isNullOrEmpty(name) else scene.makeNameUnique(f'{typeName}1')
+    uniqueName = name if (scene.isNameAvailable(name) and not stringutils.isNullOrEmpty(name)) else scene.makeNameUnique(f'{typeName}1')
 
     node = scene.createNode(typeName, name=uniqueName)
 
