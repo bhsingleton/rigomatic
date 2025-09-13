@@ -2,7 +2,7 @@
 A Maya python based rigging toolkit that helps support your day-to-day needs.  
 
 ## Requirements:
-This tool requires the following PIP installs: Qt.py, six, numpy and scipy.  
+This tool requires the following PIP installs: numpy and scipy.  
 On top of the following python packages: [dcc](https://github.com/bhsingleton/dcc) and [mpy](https://github.com/bhsingleton/mpy).  
 The following plug-ins, are optional, but highly recommended: [pointHelper](https://github.com/bhsingleton/PointHelper), [pointOnCurveConstraint](https://github.com/bhsingleton/PointOnCurveConstraint) and [transformConstraint](https://github.com/bhsingleton/TransformConstraint).  
 
