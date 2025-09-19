@@ -748,7 +748,102 @@ class QAttributesTab(qabstracttab.QAbstractTab):
         :rtype: None
         """
 
-        pass
+        # Check if attribute exists
+        #
+        nodeName = node.name()
+        attributeName = kwargs['longName']
+
+        if not node.hasAttr(attributeName):
+
+            log.warning(f'Unable to locate "{nodeName}.{attributeName}" attribute to edit!')
+            return
+
+        # Edit attribute properties
+        #
+        attribute = node.attribute(longName)
+        fnAttribute = om.MFnAttribute(attribute)
+
+        keyable = self.keyableRadioButton.isChecked()
+        channelBox = self.displayableRadioButton.isChecked()
+        hidden = self.hiddenRadioButton.isChecked()
+
+        if keyable:
+
+            fnAttribute.hidden = False
+            fnAttribute.channelBox = False
+            fnAttribute.keyable = keyable
+
+        elif channelBox:
+
+            fnAttribute.keyable = False
+            fnAttribute.channelBox = True
+            fnAttribute.hidden = False
+
+        elif hidden:
+
+            fnAttribute.keyable = False
+            fnAttribute.channelBox = False
+            fnAttribute.hidden = True
+
+        else:
+
+            pass
+
+        # Check if attribute ranges require editing
+        #
+        attribute = node.attribute(longName)
+
+        isNumeric = attribute.hasFn(om.MFn.kNumericAttribute)
+        isUnit = attribute.hasFn(om.MFn.kUnitAttribute)
+
+        if isNumeric:
+
+            fnAttribute = om.MFnNumericAttribute(attribute)
+            minimum = self.minimumLineEdit.text()
+
+            if not stringutils.isNullOrEmpty(minimum):
+
+                fnAttribute.setMin(stringutils.eval(minimum))
+
+            maximum = self.maximumLineEdit.text()
+
+            if not stringutils.isNullOrEmpty(maximum):
+
+                fnAttribute.setMax(stringutils.eval(maximum))
+
+            default = self.defaultLineEdit.text()
+
+            if not stringutils.isNullOrEmpty(default):
+
+                fnAttribute.default = stringutils.eval(default)
+
+        elif isUnit:
+
+            fnAttribute = om.MFnUnitAttribute(attribute)
+            unitType = fnAttribute.unitType()
+            cls = om.MDistance if (unitType == om.MFnUnitAttribute.kDistance) else om.MAngle if (unitType == om.MFnUnitAttribute.kAngle) else om.MTime
+
+            minimum = self.minimumLineEdit.text()
+
+            if not stringutils.isNullOrEmpty(minimum):
+
+                fnAttribute.setMin(cls.uiToInternal(stringutils.eval(minimum)))
+
+            maximum = self.maximumLineEdit.text()
+
+            if not stringutils.isNullOrEmpty(maximum):
+
+                fnAttribute.setMax(cls.uiToInternal(stringutils.eval(maximum)))
+
+            default = self.defaultLineEdit.text()
+
+            if not stringutils.isNullOrEmpty(default):
+
+                fnAttribute.default = cls(stringutils.eval(default), unit=cls.uiUnit())
+
+        else:
+
+            pass
 
     def invalidateDefinition(self, plug):
         """
@@ -793,22 +888,49 @@ class QAttributesTab(qabstracttab.QAbstractTab):
 
         # Update numeric range widgets
         #
-        if attribute.hasFn(om.MFn.kNumericAttribute):
+        isNumeric = attribute.hasFn(om.MFn.kNumericAttribute)
+        isUnit = attribute.hasFn(om.MFn.kUnitAttribute)
 
-            fnNumericAttribute = om.MFnNumericAttribute(attribute)
-            hasMin = fnNumericAttribute.hasMin()
+        if isNumeric:
+
+            fnAttribute = om.MFnNumericAttribute(attribute)
+            hasMin = fnAttribute.hasMin()
 
             if hasMin:
 
-                self.minimumLineEdit.setText(str(fnNumericAttribute.getMin()))
+                self.minimumLineEdit.setText(str(fnAttribute.getMin()))
 
-            hasMax = fnNumericAttribute.hasMax()
+            hasMax = fnAttribute.hasMax()
 
             if hasMax:
 
-                self.maximumLineEdit.setText(str(fnNumericAttribute.getMax()))
+                self.maximumLineEdit.setText(str(fnAttribute.getMax()))
 
-            self.defaultLineEdit.setText(str(fnNumericAttribute.default))
+            self.defaultLineEdit.setText(str(fnAttribute.default))
+
+        elif isUnit:
+
+            fnAttribute = om.MFnUnitAttribute(attribute)
+            unitType = fnAttribute.unitType()
+            cls = om.MDistance if (unitType == om.MFnUnitAttribute.kDistance) else om.MAngle if (unitType == om.MFnUnitAttribute.kAngle) else om.MTime
+
+            hasMin = fnAttribute.hasMin()
+
+            if hasMin:
+
+                self.minimumLineEdit.setText(str(fnAttribute.getMin().asUnits(cls.uiUnit())))
+
+            hasMax = fnAttribute.hasMax()
+
+            if hasMax:
+
+                self.maximumLineEdit.setText(str(fnAttribute.getMax().asUnits(cls.uiUnit())))
+
+            self.defaultLineEdit.setText(str(fnAttribute.default.asUnits(cls.uiUnit())))
+
+        else:
+
+            pass
 
         # Update field-name widgets
         #
@@ -903,7 +1025,13 @@ class QAttributesTab(qabstracttab.QAbstractTab):
         :rtype: None
         """
 
-        pass
+        if self.selectedNode is None:
+
+            log.warning('No node selected to edit attribute on!')
+            return
+
+        kwargs = self.getDefinition()
+        self.editAttribute(self.selectedNode, **kwargs)
 
     @QtCore.Slot()
     def on_editAttributeAction_triggered(self):
