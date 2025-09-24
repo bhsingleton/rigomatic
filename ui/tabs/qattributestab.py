@@ -760,7 +760,7 @@ class QAttributesTab(qabstracttab.QAbstractTab):
 
         # Edit attribute properties
         #
-        attribute = node.attribute(longName)
+        attribute = node.attribute(attributeName)
         fnAttribute = om.MFnAttribute(attribute)
 
         keyable = self.keyableRadioButton.isChecked()
@@ -791,8 +791,6 @@ class QAttributesTab(qabstracttab.QAbstractTab):
 
         # Check if attribute ranges require editing
         #
-        attribute = node.attribute(longName)
-
         isNumeric = attribute.hasFn(om.MFn.kNumericAttribute)
         isUnit = attribute.hasFn(om.MFn.kUnitAttribute)
 
