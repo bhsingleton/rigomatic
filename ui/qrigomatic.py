@@ -3,7 +3,7 @@ import webbrowser
 from maya import cmds as mc
 from maya.api import OpenMaya as om
 from mpy import mpyscene
-from Qt import QtCore, QtWidgets, QtGui, QtCompat
+from dcc.vendor.Qt import QtCore, QtWidgets, QtGui, QtCompat
 from dcc.ui import qsingletonwindow, qdivider, qsignalblocker
 from dcc.maya.libs import transformutils, pluginutils
 from . import InvalidateReason

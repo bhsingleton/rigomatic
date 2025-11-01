@@ -1,5 +1,5 @@
 from maya.api import OpenMaya as om
-from Qt import QtCore, QtWidgets, QtGui
+from dcc.vendor.Qt import QtCore, QtWidgets, QtGui
 from dcc.maya.models import qplugitemmodel, qplugitemfiltermodel, qplugstyleditemdelegate
 from . import qabstracttab
 

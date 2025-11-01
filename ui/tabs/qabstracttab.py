@@ -1,5 +1,5 @@
-from Qt import QtCore, QtWidgets, QtGui
 from abc import abstractmethod
+from dcc.vendor.Qt import QtCore, QtWidgets, QtGui
 from dcc.ui.abstract import qabcmeta
 from .. import InvalidateReason
 

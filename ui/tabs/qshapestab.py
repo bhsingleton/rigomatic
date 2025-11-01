@@ -2,15 +2,15 @@ import os
 import math
 
 from maya.api import OpenMaya as om
-from Qt import QtCore, QtWidgets, QtGui
+from dcc.python import stringutils
+from dcc.vendor.Qt import QtCore, QtWidgets, QtGui
+from dcc.ui import qdivider
+from dcc.maya.libs import transformutils, shapeutils
+from dcc.maya.decorators import undo
 from itertools import chain
 from collections import namedtuple
 from enum import IntEnum
 from random import randint
-from dcc.python import stringutils
-from dcc.ui import qdivider
-from dcc.maya.libs import transformutils, shapeutils
-from dcc.maya.decorators import undo
 from . import qabstracttab
 from ..widgets import qcolorbutton, qgradient
 from ...libs import createutils, modifyutils, ColorMode

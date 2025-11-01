@@ -1,7 +1,7 @@
 from maya import cmds as mc
 from maya.api import OpenMaya as om
-from Qt import QtCore, QtWidgets, QtGui
 from dcc.python import stringutils
+from dcc.vendor.Qt import QtCore, QtWidgets, QtGui
 from dcc.ui import qdropdownbutton, qdivider
 from dcc.maya.libs import attributeutils, plugutils, dagutils
 from dcc.maya.decorators import undo

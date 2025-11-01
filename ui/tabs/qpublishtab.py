@@ -4,14 +4,14 @@ import math
 
 from maya import cmds as mc
 from maya.api import OpenMaya as om
-from Qt import QtCore, QtWidgets, QtGui
-from collections import defaultdict
-from scipy.spatial import cKDTree
+from dcc.vendor.Qt import QtCore, QtWidgets, QtGui
 from dcc.ui import qdivider
 from dcc.python import stringutils, pathutils, importutils
 from dcc.fbx.libs import fbxio
 from dcc.generators.consecutivepairs import consecutivePairs
 from dcc.maya.libs import attributeutils, plugutils, plugmutators
+from collections import defaultdict
+from scipy.spatial import cKDTree
 from . import qabstracttab
 
 clipman = importutils.tryImport('clipman')

@@ -1,6 +1,6 @@
 from maya.api import OpenMaya as om
-from Qt import QtCore, QtWidgets, QtGui
 from scipy.spatial import cKDTree
+from dcc.vendor.Qt import QtCore, QtWidgets, QtGui
 from dcc.ui import qxyzwidget, qdivider
 from dcc.maya.libs import plugutils
 from dcc.maya.decorators import undo

@@ -1,5 +1,5 @@
 from maya.api import OpenMaya as om
-from Qt import QtCore, QtWidgets, QtGui
+from dcc.vendor.Qt import QtCore, QtWidgets, QtGui
 from dcc.ui import qxyzwidget, qdivider
 from dcc.maya.decorators import undo
 from . import qabstracttab

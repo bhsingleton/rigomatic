@@ -2,12 +2,12 @@ import re
 
 from maya import cmds as mc
 from maya.api import OpenMaya as om
-from Qt import QtCore, QtWidgets, QtGui
-from copy import copy
-from enum import IntEnum
+from dcc.vendor.Qt import QtCore, QtWidgets, QtGui
 from dcc.python import stringutils
 from dcc.maya.decorators import undo
 from dcc.generators.consecutivepairs import consecutivePairs
+from copy import copy
+from enum import IntEnum
 from . import qabstracttab
 
 import logging
